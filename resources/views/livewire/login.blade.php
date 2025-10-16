@@ -4,13 +4,13 @@
             <div class="row w-100 mx-0">
                 <div class="col-lg-4 mx-auto">
                     <div class="auth-form-light text-left py-5 px-4 px-sm-5">
-                        <div class="brand-logo">
-                            <img src="../../images/logo.svg" alt="logo">
+                    <div class="brand-logo">
+                            <img src="{{ asset('images/logo-wide-login.png') }}" alt="logo">
                         </div>
                         <h4>Hello! let's get started</h4>
                         <h6 class="font-weight-light">Sign in to continue.</h6>
-                        <form wire:submit="login" class="pt-3">
-                        @csrf
+                        <form wire:submit.prevent="login" class="pt-3">
+                            @csrf
                             <div class="form-group">
                                 <input wire:model="username" class="form-control form-control-lg"
                                     placeholder="Username">
@@ -20,7 +20,9 @@
                                     placeholder="Password">
                             </div>
                             <div class="mt-3">
-                                <button type="submit" class="btn btn-block btn-primary btn-lg font-weight-medium auth-form-btn">SIGN IN</button>
+                                <button type="submit"
+                                    class="btn btn-block btn-primary btn-lg font-weight-medium auth-form-btn">SIGN
+                                    IN</button>
                             </div>
                         </form>
                     </div>

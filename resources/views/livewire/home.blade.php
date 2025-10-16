@@ -1,6 +1,6 @@
 <div class="container-scroller">
   <!-- partial:partials/_navbar.html -->
-  <livewire:navbar />
+  <livewire:navBar />
   <!-- partial -->
   <div class="container-fluid page-body-wrapper">
     <!-- partial:partials/_settings-panel.html -->
@@ -138,23 +138,24 @@
                           <div class="table-responsive mb-3 mb-md-0 mt-3">
                             <table class="table table-borderless report-table">
                               @foreach($data->users_stat as $user)
-                        <tr>
-                        <td class="text-muted">{{ $user->nama_petugas }}</td>
-                        <td class="w-100 px-0">
-                          <div class="progress progress-md mx-4">
-                          @php
-                    $max = $data->jumlah_transaksi_30_hari_terakhir;
-                    $percent = $max > 0 ? ($user->jumlah_transaksi / $max) * 100 : 0;
-                  @endphp
-                          <div class="progress-bar" role="progressbar" style="width: {{ $percent }}%; background-color: {{ $colors[$loop->index] ?? '#007bff' }};"
-                            aria-valuenow="{{ $percent }}" aria-valuemin="0" aria-valuemax="100"></div>
-                          </div>
-                        </td>
-                        <td>
-                          <h5 class="font-weight-bold mb-0">{{ $user->jumlah_transaksi }}</h5>
-                        </td>
-                        </tr>
-                @endforeach
+                                <tr>
+                                  <td class="text-muted">{{ $user->nama_petugas }}</td>
+                                  <td class="w-100 px-0">
+                                    <div class="progress progress-md mx-4">
+                                      @php
+                                        $max = $data->jumlah_transaksi_30_hari_terakhir;
+                                        $percent = $max > 0 ? ($user->jumlah_transaksi / $max) * 100 : 0;
+                                      @endphp
+                                      <div class="progress-bar" role="progressbar"
+                                        style="width: {{ $percent }}%; background-color: {{ $colors[$loop->index] ?? '#007bff' }};"
+                                        aria-valuenow="{{ $percent }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                  </td>
+                                  <td>
+                                    <h5 class="font-weight-bold mb-0">{{ $user->jumlah_transaksi }}</h5>
+                                  </td>
+                                </tr>
+                              @endforeach
                             </table>
                           </div>
                         </div>
@@ -215,7 +216,7 @@
           //   'rgba(255, 99, 132, 0.2)',
           //   'rgba(54, 162, 235, 0.2)',
           // ],
-          backgroundColor : colors,
+          backgroundColor: colors,
           borderColor: "rgba(0,0,0,0)"
         }
         ]
@@ -280,7 +281,7 @@
 
 
     var settings = {
-      "url": "https://hirumi.xyz/pasar_2025_web/api/home",
+      "url": "{{ env('APP_URL') }}/home",
       "method": "POST",
       "timeout": 0,
       "data": {
@@ -343,7 +344,7 @@
 
 
     var settings = {
-      "url": "https://hirumi.xyz/pasar_2025_web/api/revenue_chart",
+      "url": "{{ env('APP_URL') }}/revenue_chart",
       "method": "POST",
       "timeout": 0,
       "data": {

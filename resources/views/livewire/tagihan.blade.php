@@ -104,7 +104,7 @@
     document.addEventListener('livewire:navigated', function () {
 
         var settings = {
-            "url": "https://hirumi.xyz/pasar_2025_web/api/tagihan_stat",
+            "url": "{{ env('APP_URL') }}/tagihan_stat",
             "method": "POST",
             "timeout": 0,
             "data": {
@@ -120,7 +120,7 @@
         })
 
         var settings = {
-            "url": "https://hirumi.xyz/pasar_2025_web/api/tagihan",
+            "url": "{{ env('APP_URL') }}/tagihan",
             "method": "POST",
             "timeout": 0,
             "data": {
@@ -132,7 +132,23 @@
         $.ajax(settings).done(function (response) {
 
             console.log(response);
-            var table = $('#tagihan').DataTable({
+            var table = new DataTable('#tagihan', {
+                // layout: {
+                //     topStart: {
+                //         buttons: ['copy', 'csv', 'excel', 'pdf', 'print']
+                //     }
+                // },
+                layout: {
+                    topStart: {
+                        buttons: [
+                            {
+                                extend: 'collection',
+                                text: 'Export',
+                                buttons: ['copy', 'excel', 'csv', 'pdf', 'print']
+                            }
+                        ]
+                    }
+                },
                 "pageLength": 25,
                 "data": response['data'],
                 "columns": [
@@ -170,23 +186,20 @@
                         "defaultContent": ''
                     }
                 ],
-                "order": [[0, 'asc']],
-                "paging": true,
-                "ordering": true,
-                "info": false,
-                "filter": true,
-                "layout": {
-                    // topStart: 'search',
-                    "topEnd": 'search'
-                },
-                columnDefs: [{
-                    orderable: true,
-                    className: 'select-checkbox',
-                    targets: 0
+                // "order": [[0, 'asc']],
+                // "paging": true,
+                // "ordering": true,
+                // "info": false,
+                // "filter": true,
+                "select": true,
+                "columnDefs": [{
+                    "orderable": true,
+                    "className": 'select-checkbox',
+                    "targets": 0
                 }],
-                select: {
-                    style: 'os',
-                    selector: 'td:first-child'
+                "select": {
+                    "style": 'os',
+                    "selector": 'td:first-child'
                 }
             });
         });
@@ -197,7 +210,7 @@
             "onChange": function (selectedDates, dateStr, instance) {
                 console.log(dateStr);
                 var settings = {
-                    "url": "https://hirumi.xyz/pasar_2025_web/api/tagihan",
+                    "url": "{{ env('APP_URL') }}/tagihan",
                     "method": "POST",
                     "timeout": 0,
                     "data": {
@@ -211,7 +224,7 @@
                 })
 
                 var settings = {
-                    "url": "https://hirumi.xyz/pasar_2025_web/api/tagihan_stat",
+                    "url": "{{ env('APP_URL') }}/tagihan_stat",
                     "method": "POST",
                     "timeout": 0,
                     "data": {

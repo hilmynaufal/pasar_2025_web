@@ -8,6 +8,7 @@ use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 use Illuminate\Support\Facades\Http; // Tambahkan ini
 
 
+
 class Login extends Component
 {
 
@@ -19,36 +20,30 @@ class Login extends Component
         return view('livewire.login');
     }
 
-    public function login(Request $request)
+    public function login()
     {
+        $admin = \DB::table('admin')
+                    ->where('username', $this->username)
+                    ->where('password', $this->password) // Pastikan password di database tidak di-hash jika ini adalah perbandingan langsung
+                    ->first();
 
-        $response = Http::post("https://hirumi.xyz/pasar_2025_web/api" . '/admin', [
-            'username' => $this->username,
-            'password' => $this->password,
-        ]);
-
-        $jsonReponse = $response->json();
-
-        if ($jsonReponse['status'] == 0) {
-            // LivewireAlert::title('Gagal!')
-            // ->text($jsonReponse['message'])
-            // ->error()
-            // ->toast()
-            // ->position('top-end')
-            // ->show();
-        } else {
-
-            $data = $jsonReponse['data'];
-
-            session()->put('id', $data['id']);
-            session()->put('nama', $data['nama']);
-            session()->put('nama_pasar', $data['nama_pasar']);
-            session()->put('id_pasar', $data['id_pasar']);
-            session()->put('username', $data['username']);
+        if ($admin) {
+            session()->put('id', $admin->id);
+            session()->put('nama', $admin->nama);
+            session()->put('nama_pasar', $admin->nama_pasar);
+            session()->put('id_pasar', $admin->id_pasar);
+            session()->put('username', $admin->username);
 
             session()->save();
 
             return redirect()->route('home');
+        } else {
+            LivewireAlert::title('Gagal!')
+                ->text('Username atau password salah.')
+                ->error()
+                ->toast()
+                ->position('top-end')
+                ->show();
         }
     }
 }

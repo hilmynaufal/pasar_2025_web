@@ -15,11 +15,13 @@ class Home extends Component
     {
         $date = date('Y-m-d');
         $this->date = $date;
-        $response = Http::post("https://hirumi.xyz/pasar_2025_web/api" . '/home', ["tanggal" => $date, "nama_pasar" => session('nama_pasar')]); // Ganti 'URL_API' dengan URL API yang sesuai
+        $response = Http::post(env('API_BASE_URL') . '/home', ["tanggal" => $date, "nama_pasar" => session('nama_pasar')]); // Ganti 'URL_API' dengan URL API yang sesuai
 
 
 
         $this->data = json_decode($response)->data;
+
+        // dd($this->data);
 
         // Membuat warna random dengan format 'rgba(255, 99, 132, 0.2)' sebanyak jumlah data di data->users_stat dan masukkan ke $colors
         $colors = [];
@@ -35,8 +37,6 @@ class Home extends Component
     }
     public function render()
     {
-        return view('livewire.home');
+        return view('livewire.home', ['data' => $this->data]);
     }
-
-
 }

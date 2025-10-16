@@ -28381,7 +28381,9 @@ div.tagsinput span.tag a {
 }
 
 .auth .brand-logo img {
-  width: 150px;
+  width: 300px;
+  display: block;
+  margin: 0 auto;
 }
 
 .auth form .form-group {

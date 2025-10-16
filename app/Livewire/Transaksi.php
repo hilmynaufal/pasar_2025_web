@@ -20,10 +20,10 @@ class Transaksi extends Component
     { // Tambahkan metode baru
         Log::info('Tanggal yang digunakan: ' . $this->date); // Menambahkan log untuk mencetak tanggal
 
-        $response = Http::post("https://hirumi.xyz/pasar_2025_web/api" . '/laporan', ["tanggal" => $this->date]); // Ganti 'URL_API' dengan URL API yang sesuai
+        $response = Http::post(env('API_BASE_URL') . '/laporan', ["tanggal" => $this->date]); // Mengambil URL API dari .env
         $this->transaksi = $response->json()['data'];
 
-        $response = Http::post("https://hirumi.xyz/pasar_2025_web/api" . '/dashboard', ["tanggal" => $this->date]); // Ganti 'URL_API' dengan URL API yang sesuai
+        $response = Http::post(env('API_BASE_URL') . '/dashboard', ["tanggal" => $this->date]); // Mengambil URL API dari .env
         $this->total_transaksi = $response->json()['data']['jumlah_transaksi'];
         $this->total_nominal = $response->json()['data']['total_nominal'];
     }

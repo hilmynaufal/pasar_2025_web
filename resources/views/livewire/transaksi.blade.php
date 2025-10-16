@@ -1,6 +1,6 @@
 <div wire:key="jjj" class="container-scroller">
     <!-- partial:partials/_navbar.html -->
-    <livewire:nav-bar/>
+    <livewire:nav-bar />
     <!-- partial -->
     <div class="container-fluid page-body-wrapper">
         <!-- partial:partials/_settings-panel.html -->
@@ -102,7 +102,7 @@
     document.addEventListener('livewire:navigated', function () {
 
         var settings = {
-            "url": "https://hirumi.xyz/pasar_2025_web/api/dashboard",
+            "url": "{{ env('APP_URL') }}/dashboard",
             "method": "POST",
             "timeout": 0,
             "data": {
@@ -118,7 +118,7 @@
         })
 
         var settings = {
-            "url": "https://hirumi.xyz/pasar_2025_web/api/laporan",
+            "url": "{{ env('APP_URL') }}/laporan",
             "method": "POST",
             "timeout": 0,
             "data": {
@@ -129,7 +129,18 @@
 
         $.ajax(settings).done(function (response) {
             console.log(response);
-            var table = $('#tagihan').DataTable({
+            var table = new DataTable('#tagihan', {
+                layout: {
+                    topStart: {
+                        buttons: [
+                            {
+                                extend: 'collection',
+                                text: 'Export',
+                                buttons: ['copy', 'excel', 'csv', 'pdf', 'print']
+                            }
+                        ]
+                    }
+                },
                 "pageLength": 25,
                 "data": response['data'],
                 "columns": [
@@ -170,10 +181,6 @@
                 "ordering": true,
                 "info": false,
                 "filter": true,
-                "layout": {
-                    // topStart: 'search',
-                    "topEnd": 'search'
-                },
                 "columnDefs": [{
                     orderable: true,
                     className: 'select-checkbox',
@@ -192,7 +199,7 @@
             "onChange": function (selectedDates, dateStr, instance) {
                 console.log(dateStr);
                 var settings = {
-                    "url": "https://hirumi.xyz/pasar_2025_web/api/laporan",
+                    "url": "{{ env('APP_URL') }}/laporan",
                     "method": "POST",
                     "timeout": 0,
                     "data": {
@@ -207,7 +214,7 @@
 
                 //ganti juga stat Total
                 var settings = {
-                    "url": "https://hirumi.xyz/pasar_2025_web/api/dashboard",
+                    "url": "{{ env('APP_URL') }}/dashboard",
                     "method": "POST",
                     "timeout": 0,
                     "data": {

@@ -11,16 +11,21 @@ use Illuminate\Support\Facades\Route;
 
 //web
 
-Route::middleware(['checklogin'])->group(function () {
-    Route::get('/home', Home::class)->name('home');
-    Route::get('/', Home::class)->name('/');
-    Route::get('/pedagang', Pedagang::class)->name('pedagang');
-    Route::get('/tagihan', Tagihan::class)->name('tagihan');
-    Route::get('/transaksi', Transaksi::class)->name('transaksi');
+
+
+Route::middleware(['web'])->group(function () {
+    Route::middleware(['checklogin'])->group(function () {
+        Route::get('/home', Home::class)->name('home');
+        Route::get('/', Home::class)->name('/');
+        Route::get('/pedagang', Pedagang::class)->name('pedagang');
+        Route::get('/tagihan', Tagihan::class)->name('tagihan');
+        Route::get('/transaksi', Transaksi::class)->name('transaksi');
+    });
+    Route::get('/login', Login::class)->name('login');
 });
 
 
-Route::get('/login', Login::class)->name('login');  
+
 
 
 

@@ -5,7 +5,10 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
+use App\Mail\InvoiceMail;
 
 class ApiController extends Controller
 {
@@ -19,25 +22,25 @@ class ApiController extends Controller
     {
         $id_kios = $request->id_kios;
         $string = $request->keyword;
+        $nama_pasar = $request->nama_pasar; // Tambahkan parameter nama_pasar
+
+        $query = DB::table('pedagang')
+            ->select('*');
+
+        // Tambahkan filter nama_pasar jika ada
+        if (!empty($nama_pasar)) {
+            $query->where('nama_pasar', $nama_pasar);
+        }
 
         if (!empty($id_kios)) {
-            $pedagang = DB::table('pedagang')
-                ->select('*')
-                ->whereRaw('BINARY id_kios = ?', $id_kios)
-                ->orderBy('nama', 'asc')
-                ->paginate(10);
-        } else if (empty($string)) {
-            $pedagang = DB::table('pedagang')
-                ->select('*')
-                ->orderBy('nama', 'asc')
-                ->paginate(10);
-        } else {
-            $pedagang = DB::table('pedagang')
-                ->select('*')
-                ->where('nama', 'like', '%' . $string . '%')
-                ->orderBy('nama', 'asc')
-                ->paginate(10);
+            $query->whereRaw('BINARY id_kios = ?', $id_kios);
+        } else if (!empty($string)) {
+            $query->where('nama', 'like', '%' . $string . '%');
         }
+        // Jika id_kios dan string kosong, tidak perlu menambahkan kondisi WHERE tambahan
+        // karena query dasar (yang mungkin sudah difilter oleh nama_pasar) akan mengambil semua.
+
+        $pedagang = $query->orderBy('nama', 'asc')->paginate(10);
 
         $array = ['status' => 1, 'data' => $pedagang->items(), 'pages' => $pedagang->lastPage()];
         return response()->json($array, 200);
@@ -81,7 +84,7 @@ class ApiController extends Controller
             ->orderBy('id', 'asc');
 
         if (!empty($id_kios)) {
-            $query->whereRaw('BINARY id_kios = ?', [$id_kios]);
+            $query->where("id_kios", "=", $id_kios);
         } else if (!empty($id_pedagang)) {
             $query->whereRaw('BINARY pedagang_id = ?', [$id_pedagang]);
         }
@@ -105,39 +108,161 @@ class ApiController extends Controller
 
     public function bayar(Request $request)
     {
-        $now = now();
+        // Validasi input yang diperlukan
+        $request->validate([
+            'id_tagihan' => 'required|integer|exists:tagihan,id',
+            'id_petugas' => 'required|integer|exists:petugas,id',
+            'nominal_transaksi' => 'required|numeric|min:0',
+            'metode_pembayaran' => 'required|string|max:50',
+            'nama_pedagang' => 'required|string|max:100',
+            'kode_kios' => 'required|string|max:20',
+            'jenis_akun' => 'required|string|max:50',
+            'nama_pasar' => 'required|string|max:100',
+            'nama_petugas' => 'required|string|max:100',
+            'nama_distrik' => 'required|string|max:100'
+        ]);
 
+        $now = now();
         $id_tagihan = $request->id_tagihan;
         $id_petugas = $request->id_petugas;
 
+        // Generate unique transaction ID
         $id = 'RTB-' . str_replace(' ', '', str_replace(':', '', str_replace('-', '', $now))) . rand(1000, 9999);
 
-        $transaksi = DB::table('transaksi')->insert([
-            'id' => $id,
-            'nominal_transaksi' => $request->nominal_transaksi,
-            'tanggal_transaksi' => $now,
-            'metode_pembayaran' => $request->metode_pembayaran,
-            'nama_pedagang' => $request->nama_pedagang,
-            'kode_kios' => $request->kode_kios,
-            'jenis_akun' => $request->jenis_akun,
-            'nama_pasar' => $request->nama_pasar,
-            'nama_petugas' => $request->nama_petugas,
-            'nama_distrik' => $request->nama_distrik,
-            'id_petugas' => $request->id_petugas,
-            'status' => "SUCCESS"
-        ]);
+        // Mulai database transaction
+        DB::beginTransaction();
 
-        DB::table('tagihan')->where('id', $id_tagihan)->update([
-            'status' => 1,
-            'salesman' => $request->nama_petugas,
-            'transaction_id' => $id
-        ]);
+        try {
+            // Validasi status tagihan sebelum pembayaran
+            $tagihan = DB::table('tagihan')
+                ->where('id', $id_tagihan)
+                ->where('status', '!=', 1) // Pastikan belum dibayar
+                ->first();
 
-        if ($transaksi) {
+            if (!$tagihan) {
+                throw new \Exception('Tagihan tidak ditemukan atau sudah dibayar');
+            }
+
+            // Validasi nominal pembayaran
+            if ($request->nominal_transaksi <= 0) {
+                throw new \Exception('Nominal pembayaran harus lebih dari 0');
+            }
+
+            // Insert transaksi
+            $transaksi = DB::table('transaksi')->insert([
+                'id' => $id,
+                'nominal_transaksi' => $request->nominal_transaksi,
+                'tanggal_transaksi' => $now,
+                'metode_pembayaran' => $request->metode_pembayaran,
+                'nama_pedagang' => $request->nama_pedagang,
+                'kode_kios' => $request->kode_kios,
+                'jenis_akun' => $request->jenis_akun,
+                'nama_pasar' => $request->nama_pasar,
+                'nama_petugas' => $request->nama_petugas,
+                'nama_distrik' => $request->nama_distrik,
+                'id_petugas' => $request->id_petugas,
+                'status' => "SUCCESS",
+                'created_at' => $now,
+                'updated_at' => $now
+            ]);
+
+            if (!$transaksi) {
+                throw new \Exception('Gagal menyimpan data transaksi');
+            }
+
+            // Update status tagihan
+            $updateTagihan = DB::table('tagihan')
+                ->where('id', $id_tagihan)
+                ->update([
+                    'status' => 1,
+                    'salesman' => $request->nama_petugas,
+                    'transaction_id' => $id,
+                    'updated_at' => $now
+                ]);
+
+            if (!$updateTagihan) {
+                throw new \Exception('Gagal mengupdate status tagihan');
+            }
+
+            // Ambil data transaksi yang baru dibuat
             $data_transaksi = DB::table('transaksi')->where('id', $id)->first();
-            return response()->json(['status' => 1, 'message' => 'Pembayaran berhasil', 'data' => [$data_transaksi]], 200);
-        } else {
-            return response()->json(['status' => 0, 'message' => 'Gagal melakukan pembayaran'], 200);
+            
+            if (!$data_transaksi) {
+                throw new \Exception('Data transaksi tidak ditemukan');
+            }
+
+            // Ambil email pedagang berdasarkan kode_kios
+            $pedagang = DB::table('pedagang')
+                ->select('email', 'nama')
+                ->where('kode_kios', $request->kode_kios)
+                ->first();
+            
+            // Commit transaction sebelum mengirim email
+            DB::commit();
+
+            // Log transaksi berhasil
+            Log::info('Transaksi berhasil', [
+                'transaction_id' => $id,
+                'id_tagihan' => $id_tagihan,
+                'id_petugas' => $id_petugas,
+                'nominal' => $request->nominal_transaksi,
+                'timestamp' => $now
+            ]);
+            
+            // Kirim email invoice jika email tersedia (setelah commit)
+            if ($pedagang && !empty($pedagang->email)) {
+                try {
+                    $emailData = [
+                        'id' => $data_transaksi->id,
+                        'tanggal_transaksi' => $data_transaksi->tanggal_transaksi,
+                        'nominal_transaksi' => $data_transaksi->nominal_transaksi,
+                        'metode_pembayaran' => $data_transaksi->metode_pembayaran,
+                        'nama_pedagang' => $data_transaksi->nama_pedagang,
+                        'kode_kios' => $data_transaksi->kode_kios,
+                        'jenis_akun' => $data_transaksi->jenis_akun,
+                        'nama_pasar' => $data_transaksi->nama_pasar,
+                        'nama_petugas' => $data_transaksi->nama_petugas,
+                        'nama_distrik' => $data_transaksi->nama_distrik,
+                        'status' => $data_transaksi->status
+                    ];
+                    
+                    Mail::to($pedagang->email)->send(new InvoiceMail($emailData));
+                    
+                    Log::info('Email invoice berhasil dikirim', [
+                        'transaction_id' => $id,
+                        'email' => $pedagang->email
+                    ]);
+                } catch (\Exception $e) {
+                    // Log error jika pengiriman email gagal, tapi transaksi tetap berhasil
+                    Log::error('Gagal mengirim email invoice: ' . $e->getMessage(), [
+                        'transaction_id' => $id,
+                        'email' => $pedagang->email ?? 'tidak ada'
+                    ]);
+                }
+            }
+            
+            return response()->json([
+                'status' => 1, 
+                'message' => 'Pembayaran berhasil', 
+                'data' => [$data_transaksi]
+            ], 200);
+
+        } catch (\Exception $e) {
+            // Rollback transaction jika ada error
+            DB::rollback();
+            
+            // Log error
+            Log::error('Gagal melakukan pembayaran: ' . $e->getMessage(), [
+                'id_tagihan' => $id_tagihan,
+                'id_petugas' => $id_petugas,
+                'nominal' => $request->nominal_transaksi ?? 0,
+                'error' => $e->getMessage()
+            ]);
+            
+            return response()->json([
+                'status' => 0, 
+                'message' => 'Gagal melakukan pembayaran: ' . $e->getMessage()
+            ], 400);
         }
     }
 
