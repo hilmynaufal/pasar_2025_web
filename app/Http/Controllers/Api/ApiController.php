@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 use App\Mail\InvoiceMail;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class ApiController extends Controller
 {
@@ -84,7 +85,7 @@ class ApiController extends Controller
             ->orderBy('id', 'asc');
 
         if (!empty($id_kios)) {
-            $query->where("id_kios", "=", $id_kios);
+            $query->whereRaw("BINARY id_kios = ?", [$id_kios]);
         } else if (!empty($id_pedagang)) {
             $query->whereRaw('BINARY pedagang_id = ?', [$id_pedagang]);
         }
@@ -109,18 +110,6 @@ class ApiController extends Controller
     public function bayar(Request $request)
     {
         // Validasi input yang diperlukan
-        $request->validate([
-            'id_tagihan' => 'required|integer|exists:tagihan,id',
-            'id_petugas' => 'required|integer|exists:petugas,id',
-            'nominal_transaksi' => 'required|numeric|min:0',
-            'metode_pembayaran' => 'required|string|max:50',
-            'nama_pedagang' => 'required|string|max:100',
-            'kode_kios' => 'required|string|max:20',
-            'jenis_akun' => 'required|string|max:50',
-            'nama_pasar' => 'required|string|max:100',
-            'nama_petugas' => 'required|string|max:100',
-            'nama_distrik' => 'required|string|max:100'
-        ]);
 
         $now = now();
         $id_tagihan = $request->id_tagihan;
@@ -162,8 +151,8 @@ class ApiController extends Controller
                 'nama_distrik' => $request->nama_distrik,
                 'id_petugas' => $request->id_petugas,
                 'status' => "SUCCESS",
-                'created_at' => $now,
-                'updated_at' => $now
+                // 'created_at' => $now,
+                // 'updated_at' => $now
             ]);
 
             if (!$transaksi) {
@@ -177,7 +166,7 @@ class ApiController extends Controller
                     'status' => 1,
                     'salesman' => $request->nama_petugas,
                     'transaction_id' => $id,
-                    'updated_at' => $now
+                    // 'updated_at' => $now
                 ]);
 
             if (!$updateTagihan) {
@@ -559,5 +548,78 @@ class ApiController extends Controller
         return response()->json($array, 200);
     }
 
+    public function generateQrCode(Request $request)
+    {
+        try {
+            // Validasi input
+            $request->validate([
+                'pedagang_id' => 'required|integer|exists:pedagang,id'
+            ]);
+
+            $pedagang_id = $request->pedagang_id;
+
+            // Ambil data pedagang
+            $pedagang = DB::table('pedagang')
+                ->where('id', $pedagang_id)
+                ->first();
+
+            if (!$pedagang) {
+                return response()->json([
+                    'status' => 0,
+                    'message' => 'Pedagang tidak ditemukan'
+                ], 404);
+            }
+
+            // Pastikan directory qr_codes ada
+            $qrCodesDir = public_path('qr_codes');
+            if (!is_dir($qrCodesDir)) {
+                mkdir($qrCodesDir, 0755, true);
+            }
+
+            // Generate nama file QR code
+            $fileName = 'qr_' . $pedagang_id . '_' . time() . '.png';
+            $filePath = public_path('qr_codes/' . $fileName);
+
+            // Generate QR code dengan id_kios sebagai content
+            QrCode::format('png')
+                ->size(300)
+                ->margin(2)
+                ->generate($pedagang->id_kios, $filePath);
+
+            // Update field qr_code_file di tabel pedagang
+            DB::table('pedagang')
+                ->where('id', $pedagang_id)
+                ->update([
+                    'qr_code_file' => $fileName,
+                    'updated_at' => now()
+                ]);
+
+            Log::info('QR Code berhasil digenerate', [
+                'pedagang_id' => $pedagang_id,
+                'id_kios' => $pedagang->id_kios,
+                'file_name' => $fileName
+            ]);
+
+            return response()->json([
+                'status' => 1,
+                'message' => 'QR Code berhasil digenerate',
+                'data' => [
+                    'qr_code_file' => $fileName,
+                    'qr_code_url' => url('qr_codes/' . $fileName)
+                ]
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::error('Gagal generate QR Code: ' . $e->getMessage(), [
+                'pedagang_id' => $request->pedagang_id ?? null,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'status' => 0,
+                'message' => 'Gagal generate QR Code: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 
 }

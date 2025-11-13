@@ -2,16 +2,20 @@
 
 namespace App\Livewire;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 class Pedagang extends Component
 {
     use WithPagination;
-    
+
     public $pedagang;
     public $showModal = false;
     public $editingPedagang = null;
+    public $showQrModal = false;
+    public $qrCodeUrl = '';
+    public $qrPedagangNama = '';
     
     // Form fields
     public $nama = '';
@@ -132,10 +136,23 @@ class Pedagang extends Component
             } else {
                 // Create new pedagang
                 // $data['created_at'] = now();
-                $result = DB::table('pedagang')->insert($data);
-                
-                if ($result) {
-                    session()->flash('success', 'Pedagang berhasil ditambahkan!');
+                $pedagangId = DB::table('pedagang')->insertGetId($data);
+
+                if ($pedagangId) {
+                    // Auto-generate QR code untuk pedagang baru
+                    try {
+                        $response = Http::post(env('API_BASE_URL') . '/api/generate-qr', [
+                            'pedagang_id' => $pedagangId
+                        ]);
+
+                        if ($response->successful()) {
+                            session()->flash('success', 'Pedagang berhasil ditambahkan dan QR Code berhasil digenerate!');
+                        } else {
+                            session()->flash('success', 'Pedagang berhasil ditambahkan, tapi QR Code gagal digenerate!');
+                        }
+                    } catch (\Exception $e) {
+                        session()->flash('success', 'Pedagang berhasil ditambahkan, tapi QR Code gagal digenerate: ' . $e->getMessage());
+                    }
                 } else {
                     session()->flash('error', 'Gagal menambahkan pedagang!');
                     return;
@@ -182,7 +199,42 @@ class Pedagang extends Component
         $this->email = '';
         $this->resetErrorBag();
     }
-    
+
+    public function generateQr($id) {
+        try {
+            $url = env('API_BASE_URL') . '/generate-qr';
+            $response = Http::post($url, [
+                'pedagang_id' => $id
+            ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                session()->flash('success', 'QR Code berhasil digenerate! ');
+                $this->refreshDataTable();
+            } else {
+                session()->flash('error', 'Gagal generate QR Code! ');
+            }
+        } catch (\Exception $e) {
+            session()->flash('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
+    public function viewQr($id, $qrCodeFile, $nama) {
+        if (!empty($qrCodeFile)) {
+            $this->qrCodeUrl = url('qr_codes/' . $qrCodeFile);
+            $this->qrPedagangNama = $nama;
+            $this->showQrModal = true;
+        } else {
+            session()->flash('error', 'QR Code belum digenerate untuk pedagang ini!');
+        }
+    }
+
+    public function closeQrModal() {
+        $this->showQrModal = false;
+        $this->qrCodeUrl = '';
+        $this->qrPedagangNama = '';
+    }
+
     public function render()
     {
         return view('livewire.pedagang');

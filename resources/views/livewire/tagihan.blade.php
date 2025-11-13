@@ -153,7 +153,13 @@
                 "data": response['data'],
                 "columns": [
                     {
-                        "data": "pedagang"
+                        "data": "pedagang", "render": function (data, type, row) {
+                            if (data == null || data == "" || data == ' ') {
+                                return "<span style='color: grey;'><i>(Nama Kosong)</i></span>"
+                            } else {
+                                return data;
+                            }
+                        }
                     },
                     {
                         "data": "status",
@@ -177,8 +183,20 @@
                             return s;
                         }
                     },
-                    { "data": "transaction_id" },
-                    { "data": "salesman" },
+                    { "data": "transaction_id", "render": function (data, type, row) {
+                        if (data == null || data == "" || data == ' ') {
+                            return "<span style='color: grey;'><i>(Tidak Tersedia)</i></span>"
+                        } else {
+                            return data;
+                        }
+                    } },
+                    { "data": "salesman", "render": function (data, type, row) {
+                        if (data == null || data == "" || data == ' ') {
+                            return "<span style='color: grey;'><i>(Tidak Tersedia)</i></span>"
+                        } else {
+                            return data;
+                        }
+                    } },
                     {
                         "className": 'details-control',
                         "orderable": false,

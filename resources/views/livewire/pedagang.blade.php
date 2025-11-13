@@ -49,6 +49,7 @@
                                                         <th>Alamat</th>
                                                         <th>Jenis Dagangan</th>
                                                         <th>Email</th>
+                                                        <th>QR Code</th>
                                                         <th>Aksi</th>
                                                     </tr>
                                                 </thead>
@@ -222,6 +223,33 @@
         </div>
     </div>
     @endif
+
+    <!-- Modal QR Code Preview -->
+    @if($showQrModal)
+    <div class="modal fade show" style="display: block; background-color: rgba(0,0,0,0.5);" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">QR Code - {{ $qrPedagangNama }}</h5>
+                    <button type="button" class="close" wire:click="closeQrModal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body text-center">
+                    <img src="{{ $qrCodeUrl }}" alt="QR Code" class="img-fluid" style="max-width: 300px;">
+                    <div class="mt-3">
+                        <a href="{{ $qrCodeUrl }}" download="qr_{{ $qrPedagangNama }}.png" class="btn btn-primary">
+                            <i class="icon-download"></i> Download QR Code
+                        </a>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" wire:click="closeQrModal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
 </div>
 
 
@@ -235,12 +263,22 @@
     window.editPedagang = function(id) {
         @this.call('edit', id);
     };
-    
+
     // Fungsi untuk delete pedagang dengan konfirmasi
     window.deletePedagang = function(id) {
         if (confirm('Apakah Anda yakin ingin menghapus pedagang ini?')) {
             @this.call('delete', id);
         }
+    };
+
+    // Fungsi untuk generate QR code
+    window.generateQr = function(id) {
+        @this.call('generateQr', id);
+    };
+
+    // Fungsi untuk view QR code
+    window.viewQr = function(id, qrCodeFile, nama) {
+        @this.call('viewQr', id, qrCodeFile, nama);
     };
 
     
@@ -261,7 +299,13 @@
             "pageLength": 25,
             "data": data1,
             "columns": [
-                { "data": "nama" },
+                { "data": "nama", "render": function (data, type, row) {
+                    if (data == null || data == "" || data == ' ') {
+                        return "<span style='color: grey;'><i>(Nama Kosong)</i></span>"
+                    } else {
+                        return data;
+                    }
+                } },
                 { "data": "kode_kios" },
                 { "data": "id_kios" },
                 {
@@ -271,18 +315,49 @@
                 },
                 {
                     "data": "nomor_identitas", "render": function (data, type, row) {
-                        return data == "" ? "-" : data;
+                        if (data == null || data == "" || data == ' ') {
+                            return "<span style='color: grey;'><i>(Nomor Identitas Kosong)</i></span>"
+                        } else {
+                            return data;
+                        }
                     }
                 },
                 {
                     "data": "alamat", "render": function (data, type, row) {
-                        return data == "" ? "-" : data;
+                        if (data == null || data == "" || data == ' ') {
+                            return "<span style='color: grey;'><i>(Alamat Kosong)</i></span>"
+                        } else {
+                            return data;
+                        }
                     }
                 },
-                { "data": "jenis_dagangan" },
+                { "data": "jenis_dagangan", "render": function (data, type, row) {
+                    if (data == null || data == "" || data == ' ') {
+                        return "<span style='color: grey;'><i>(Jenis Dagangan Kosong)</i></span>"
+                    } else {
+                        return data;
+                    }
+                } },
                 {
                     "data": "email", "render": function (data, type, row) {
-                        return data == "" || data == null ? "-" : data;
+                        if (data == null || data == "" || data == ' ') {
+                            return "<span style='color: grey;'><i>(Email Kosong)</i></span>"
+                        } else {
+                            return data;
+                        }
+                    }
+                },
+                {
+                    "className": 'text-center',
+                    "orderable": false,
+                    "data": null,
+                    "render": function (data, type, row) {
+                        if (row.qr_code_file && row.qr_code_file != '' && row.qr_code_file != ' ' && row.qr_code_file != null) {
+                            return '<button class="btn btn-sm btn-success me-1" onclick="viewQr(' + row.id + ', \'' + row.qr_code_file + '\', \'' + row.nama + '\')"><i class="icon-eye"></i></button>' +
+                                   '<button class="btn btn-sm btn-primary" onclick="generateQr(' + row.id + ')"><i class="icon-refresh"></i></button>';
+                        } else {
+                            return '<button class="btn btn-sm btn-primary" onclick="generateQr(' + row.id + ')"><i class="icon-layers"></i></button>';
+                        }
                     }
                 },
                 {

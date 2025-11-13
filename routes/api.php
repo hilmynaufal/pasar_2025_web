@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/test', [ApiController::class, 'test']);
 Route::post('/cari_pedagang', [ApiController::class, 'cari_pedagang']);
 Route::post('/pedagang', [ApiController::class, 'pedagang']);
+Route::post('/generate-qr', [ApiController::class, 'generateQrCode']);
 Route::post('/tagihan', [ApiController::class, 'tagihan']);
 Route::post('/bayar', [ApiController::class, 'bayar']);
 Route::post('/dashboard', [ApiController::class, 'dashboard']); // Rute baru untuk dashboard
