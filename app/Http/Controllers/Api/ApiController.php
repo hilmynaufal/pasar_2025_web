@@ -199,36 +199,37 @@ class ApiController extends Controller
             ]);
             
             // Kirim email invoice jika email tersedia (setelah commit)
-            if ($pedagang && !empty($pedagang->email)) {
-                try {
-                    $emailData = [
-                        'id' => $data_transaksi->id,
-                        'tanggal_transaksi' => $data_transaksi->tanggal_transaksi,
-                        'nominal_transaksi' => $data_transaksi->nominal_transaksi,
-                        'metode_pembayaran' => $data_transaksi->metode_pembayaran,
-                        'nama_pedagang' => $data_transaksi->nama_pedagang,
-                        'kode_kios' => $data_transaksi->kode_kios,
-                        'jenis_akun' => $data_transaksi->jenis_akun,
-                        'nama_pasar' => $data_transaksi->nama_pasar,
-                        'nama_petugas' => $data_transaksi->nama_petugas,
-                        'nama_distrik' => $data_transaksi->nama_distrik,
-                        'status' => $data_transaksi->status
-                    ];
-                    
-                    Mail::to($pedagang->email)->send(new InvoiceMail($emailData));
-                    
-                    Log::info('Email invoice berhasil dikirim', [
-                        'transaction_id' => $id,
-                        'email' => $pedagang->email
-                    ]);
-                } catch (\Exception $e) {
-                    // Log error jika pengiriman email gagal, tapi transaksi tetap berhasil
-                    Log::error('Gagal mengirim email invoice: ' . $e->getMessage(), [
-                        'transaction_id' => $id,
-                        'email' => $pedagang->email ?? 'tidak ada'
-                    ]);
-                }
-            }
+            // FITUR EMAIL INVOICE DINONAKTIFKAN
+            // if ($pedagang && !empty($pedagang->email)) {
+            //     try {
+            //         $emailData = [
+            //             'id' => $data_transaksi->id,
+            //             'tanggal_transaksi' => $data_transaksi->tanggal_transaksi,
+            //             'nominal_transaksi' => $data_transaksi->nominal_transaksi,
+            //             'metode_pembayaran' => $data_transaksi->metode_pembayaran,
+            //             'nama_pedagang' => $data_transaksi->nama_pedagang,
+            //             'kode_kios' => $data_transaksi->kode_kios,
+            //             'jenis_akun' => $data_transaksi->jenis_akun,
+            //             'nama_pasar' => $data_transaksi->nama_pasar,
+            //             'nama_petugas' => $data_transaksi->nama_petugas,
+            //             'nama_distrik' => $data_transaksi->nama_distrik,
+            //             'status' => $data_transaksi->status
+            //         ];
+            //
+            //         Mail::to($pedagang->email)->send(new InvoiceMail($emailData));
+            //
+            //         Log::info('Email invoice berhasil dikirim', [
+            //             'transaction_id' => $id,
+            //             'email' => $pedagang->email
+            //         ]);
+            //     } catch (\Exception $e) {
+            //         // Log error jika pengiriman email gagal, tapi transaksi tetap berhasil
+            //         Log::error('Gagal mengirim email invoice: ' . $e->getMessage(), [
+            //             'transaction_id' => $id,
+            //             'email' => $pedagang->email ?? 'tidak ada'
+            //         ]);
+            //     }
+            // }
             
             return response()->json([
                 'status' => 1, 
@@ -261,6 +262,7 @@ class ApiController extends Controller
         $tanggal = $request->tanggal;
         $id = $request->id_petugas;
         $nama_pasar = $request->nama_pasar;
+        $status = $request->status;
 
         $query = DB::table('transaksi')
             ->select('*')
@@ -272,6 +274,10 @@ class ApiController extends Controller
 
         if (!empty($nama_pasar)) {
             $query->where('nama_pasar', $nama_pasar);
+        }
+
+        if (!empty($status)) {
+            $query->where('status', $status);
         }
 
         $laporan = $query->get()->toArray();
@@ -357,6 +363,7 @@ class ApiController extends Controller
         $id = $request->input("id");
         $tanggal = $request->input('tanggal');
         $nama_pasar = $request->input('nama_pasar');
+        $status = $request->input('status');
 
         $query = DB::table('transaksi')
             ->select(DB::raw('id_petugas, SUM(nominal_transaksi) as total_nominal'))
@@ -370,6 +377,11 @@ class ApiController extends Controller
         // Tambahkan kondisi jika nama_pasar tidak kosong
         if (!empty($nama_pasar)) {
             $query->where('nama_pasar', $nama_pasar);
+        }
+
+        // Tambahkan kondisi jika status tidak kosong
+        if (!empty($status)) {
+            $query->where('status', $status);
         }
 
         $totalNominal = $query->get()->toArray();
@@ -390,6 +402,11 @@ class ApiController extends Controller
         // Tambahkan kondisi jika nama_pasar tidak kosong
         if (!empty($nama_pasar)) {
             $queryJumlahTransaksi->where('nama_pasar', $nama_pasar);
+        }
+
+        // Tambahkan kondisi jika status tidak kosong
+        if (!empty($status)) {
+            $queryJumlahTransaksi->where('status', $status);
         }
 
         $jumlahTransaksi = $queryJumlahTransaksi->count();
@@ -546,6 +563,49 @@ class ApiController extends Controller
 
         $array = ['status' => 1, 'data' => $result, 'pages' => 0];
         return response()->json($array, 200);
+    }
+
+    public function getFilterOptions(Request $request)
+    {
+        // Get distinct pasar (markets)
+        $pasarList = DB::table('transaksi')
+            ->select('nama_pasar')
+            ->distinct()
+            ->whereNotNull('nama_pasar')
+            ->where('nama_pasar', '!=', '')
+            ->orderBy('nama_pasar', 'asc')
+            ->pluck('nama_pasar')
+            ->toArray();
+
+        // Get distinct petugas (officers)
+        $petugasList = DB::table('transaksi')
+            ->select('id_petugas', 'nama_petugas')
+            ->distinct()
+            ->whereNotNull('id_petugas')
+            ->whereNotNull('nama_petugas')
+            ->where('nama_petugas', '!=', '')
+            ->orderBy('nama_petugas', 'asc')
+            ->get()
+            ->toArray();
+
+        // Get distinct status
+        $statusList = DB::table('transaksi')
+            ->select('status')
+            ->distinct()
+            ->whereNotNull('status')
+            ->where('status', '!=', '')
+            ->orderBy('status', 'asc')
+            ->pluck('status')
+            ->toArray();
+
+        return response()->json([
+            'status' => 1,
+            'data' => [
+                'pasar' => $pasarList,
+                'petugas' => $petugasList,
+                'status' => $statusList
+            ]
+        ], 200);
     }
 
     public function generateQrCode(Request $request)

@@ -21,3 +21,4 @@ Route::post('/home', [ApiController::class, 'home']);
 Route::post('/admin', [ApiController::class, 'admin']);
 Route::post('/tagihan_stat', [ApiController::class, 'tagihan_stat']);
 Route::post('/home_users_stat', [ApiController::class, 'home_users_stat']);
+Route::post('/filter_options', [ApiController::class, 'getFilterOptions']);

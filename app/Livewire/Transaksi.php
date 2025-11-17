@@ -12,6 +12,17 @@ class Transaksi extends Component
     public string $date;
     public string $total_transaksi;
     public string $total_nominal;
+
+    // Filter options
+    public $pasar_options = [];
+    public $petugas_options = [];
+    public $status_options = [];
+
+    // Filter values
+    public $filter_pasar = '';
+    public $filter_petugas = '';
+    public $filter_status = '';
+
     // public function mount() {
     //     $this->fetchDataPedagang();
     // }
@@ -28,9 +39,20 @@ class Transaksi extends Component
         $this->total_nominal = $response->json()['data']['total_nominal'];
     }
 
+    public function fetchFilterOptions()
+    {
+        $response = Http::post(env('API_BASE_URL') . '/filter_options');
+        $data = $response->json()['data'];
+
+        $this->pasar_options = $data['pasar'];
+        $this->petugas_options = $data['petugas'];
+        $this->status_options = $data['status'];
+    }
+
     public function mount()
     {
         $this->date = date('Y-m-d');
+        $this->fetchFilterOptions();
         $this->fetchDataTransaksi();
         Log::info('Tanggal yang digunakan: ' . $this->date); // Menambahkan log untuk mencetak tanggal
     }
