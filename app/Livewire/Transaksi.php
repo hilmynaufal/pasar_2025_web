@@ -16,12 +16,12 @@ class Transaksi extends Component
     // Filter options
     public $pasar_options = [];
     public $petugas_options = [];
-    public $status_options = [];
+    public $distrik_options = [];
 
     // Filter values
     public $filter_pasar = '';
     public $filter_petugas = '';
-    public $filter_status = '';
+    public $filter_distrik = '';
 
     // public function mount() {
     //     $this->fetchDataPedagang();
@@ -34,19 +34,25 @@ class Transaksi extends Component
         $response = Http::post(env('API_BASE_URL') . '/laporan', ["tanggal" => $this->date]); // Mengambil URL API dari .env
         $this->transaksi = $response->json()['data'];
 
-        $response = Http::post(env('API_BASE_URL') . '/dashboard', ["tanggal" => $this->date]); // Mengambil URL API dari .env
-        $this->total_transaksi = $response->json()['data']['jumlah_transaksi'];
-        $this->total_nominal = $response->json()['data']['total_nominal'];
+        // $response = Http::post(env('API_BASE_URL') . '/dashboard', ["tanggal" => $this->date]); // Mengambil URL API dari .env
+        // $this->total_transaksi = $response->json()['data']['jumlah_transaksi'];
+        // $this->total_nominal = $response->json()['data']['total_nominal'];
     }
 
     public function fetchFilterOptions()
     {
-        $response = Http::post(env('API_BASE_URL') . '/filter_options');
+        $data = [];
+        if (session('nama_pasar') != "All") {
+            $data['nama_pasar'] = session( 'nama_pasar');
+        } else {
+            $data['nama_pasar'] = null;
+        }
+        $response = Http::post(env('API_BASE_URL') . '/filter_options', $data);
         $data = $response->json()['data'];
 
         $this->pasar_options = $data['pasar'];
         $this->petugas_options = $data['petugas'];
-        $this->status_options = $data['status'];
+        $this->distrik_options = $data['distrik'];
     }
 
     public function mount()

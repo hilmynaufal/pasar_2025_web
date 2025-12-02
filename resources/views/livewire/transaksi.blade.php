@@ -39,7 +39,6 @@
                                                 Filter Pasar
                                             </p>
                                             <select class="form-control form-control-sm" id="filter_pasar" wire:model="filter_pasar">
-                                                <option value="">Semua Pasar</option>
                                                 @foreach($pasar_options as $pasar)
                                                     <option value="{{ $pasar }}">{{ $pasar }}</option>
                                                 @endforeach
@@ -60,12 +59,12 @@
                                         </div>
                                         <div class="col-12 col-md-6 col-lg-3 mb-3">
                                             <p class="card-description">
-                                                Filter Status
+                                                Filter Distrik
                                             </p>
-                                            <select class="form-control form-control-sm" id="filter_status" wire:model="filter_status">
-                                                <option value="">Semua Status</option>
-                                                @foreach($status_options as $status)
-                                                    <option value="{{ $status }}">{{ $status }}</option>
+                                            <select class="form-control form-control-sm" id="filter_distrik" wire:model="filter_distrik">
+                                                <option value="">Semua Distrik</option>
+                                                @foreach($distrik_options as $distrik)
+                                                    <option value="{{ $distrik }}">{{ $distrik }}</option>
                                                 @endforeach
                                             </select>
                                         </div>
@@ -98,7 +97,9 @@
                                                     <th>Nama Pasar</th>
                                                     <th>Nama Distrik</th>
                                                     <th>Nama Petugas</th>
-                                                    <th></th>
+                                                    @if(session('role') === 'superadmin')
+                                                        <th>Aksi</th>
+                                                    @endif
                                                 </tr>
                                             </thead>
                                         </table>
@@ -133,14 +134,13 @@
 @script
 <script>
     document.addEventListener('livewire:navigated', function () {
-
         // Function to get current filter values
         function getFilterData() {
             return {
                 "tanggal": $("#kt_datepicker_1").val() || "{{$date}}",
                 "nama_pasar": $("#filter_pasar").val() || "",
                 "id_petugas": $("#filter_petugas").val() || "",
-                "status": $("#filter_status").val() || ""
+                "nama_distrik": $("#filter_distrik").val() || ""
             };
         }
 
@@ -162,6 +162,10 @@
         function updateStats() {
             var filterData = getFilterData();
 
+            function number_format(number) {
+                return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+            }
+
             $.ajax({
                 "url": "{{ env('APP_URL') }}/dashboard",
                 "method": "POST",
@@ -170,7 +174,7 @@
             }).done(function (response) {
                 console.log(response);
                 $('#total_transaksi').text(response['data']['jumlah_transaksi']);
-                $('#total_nominal').text('Rp. ' + response['data']['total_nominal']);
+                $('#total_nominal').text('Rp. ' + number_format(response['data']['total_nominal']));
             });
         }
 
@@ -234,8 +238,8 @@
                 '<c t="inlineStr" r="B6"><is><t>' + stats.pasar + '</t></is></c></row>' +
                 '<row r="7"><c t="inlineStr" r="A7"><is><t>Petugas</t></is></c>' +
                 '<c t="inlineStr" r="B7"><is><t>' + stats.petugas + '</t></is></c></row>' +
-                '<row r="8"><c t="inlineStr" r="A8"><is><t>Status</t></is></c>' +
-                '<c t="inlineStr" r="B8"><is><t>' + stats.status + '</t></is></c></row>' +
+                '<row r="8"><c t="inlineStr" r="A8"><is><t>Distrik</t></is></c>' +
+                '<c t="inlineStr" r="B8"><is><t>' + stats.distrik + '</t></is></c></row>' +
                 '<row r="9"></row>' +
                 '<row r="10"><c t="inlineStr" r="A10" s="2"><is><t>RINGKASAN TOTAL</t></is></c></row>' +
                 '<row r="11"><c t="inlineStr" r="A11"><is><t>Total Transaksi</t></is></c>' +
@@ -300,8 +304,13 @@
 
         $.ajax(settings).done(function (response) {
             console.log(response);
+
+            function number_format(number) {
+                return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+            }
+
             $('#total_transaksi').text(response['data']['jumlah_transaksi']);
-            $('#total_nominal').text('Rp. ' + response['data']['total_nominal']);
+            $('#total_nominal').text('Rp. ' + number_format(response['data']['total_nominal']));
         })
 
         // Initial load - table
@@ -317,6 +326,51 @@
 
         $.ajax(settings).done(function (response) {
             console.log(response);
+            
+            // Build base columns array
+            var baseColumns = [
+                { "data": "id" },
+                {
+                    "data": "status", "render": function (data, type, row) {
+                        var s = '<label class="badge badge-success">' + data + '</label>';
+                        return s;
+                    }
+                },
+                { "data": "metode_pembayaran" },
+                { "data": "tanggal_transaksi" },
+                { "data": "kode_kios", },
+                {
+                    "data": "nama_pedagang", "render": function (data, type, row) {
+                        return '<b>' + data + '</b>';
+                    }
+                },
+                {
+                    "data": "nominal_transaksi", "render": function (data, type, row) {
+                        var s = 'Rp. ' + data;
+                        return s;
+                    }
+                },
+                { "data": "nama_pasar" },
+                { "data": "nama_distrik" },
+                { "data": "nama_petugas" }
+            ];
+            
+            // Check if superadmin and add action column (check if action header exists)
+            var headerCount = $('#tagihan thead tr th').length;
+            if (headerCount > 10) {
+                baseColumns.push({
+                    "className": 'text-center',
+                    "orderable": false,
+                    "data": null,
+                    "render": function (data, type, row) {
+                        var pedagangName = String(row.nama_pedagang || '').replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                        return '<button class="btn btn-danger btn-sm btn-hapus-transaksi" data-id="' + row.id + '" data-pedagang="' + pedagangName + '">' +
+                               '<i class="mdi mdi-delete"></i> Hapus' +
+                               '</button>';
+                    }
+                });
+            }
+            
             var table = new DataTable('#tagihan', {
                 layout: {
                     topStart: {
@@ -339,7 +393,7 @@
                                                 tanggal: $("#kt_datepicker_1").val() || "{{$date}}",
                                                 pasar: $("#filter_pasar option:selected").text() || $("#filter_pasar").val() || 'Semua Pasar',
                                                 petugas: $("#filter_petugas option:selected").text() || 'Semua Petugas',
-                                                status: $("#filter_status").val() || 'Semua Status',
+                                                distrik: $("#filter_distrik").val() || 'Semua Distrik',
                                                 totalTransaksi: $('#total_transaksi').text(),
                                                 totalNominal: $('#total_nominal').text()
                                             };
@@ -365,39 +419,7 @@
                 },
                 "pageLength": 25,
                 "data": response['data'],
-                "columns": [
-                    { "data": "id" },
-                    {
-                        "data": "status", "render": function (data, type, row) {
-                            var s = '<label class="badge badge-success">' + data + '</label>';
-                            return s;
-                        }
-                    },
-                    { "data": "metode_pembayaran" },
-                    { "data": "tanggal_transaksi" },
-                    { "data": "kode_kios", },
-                    {
-                        "data": "nama_pedagang", "render": function (data, type, row) {
-
-                            return '<b>' + data + '</b>';
-                        }
-                    },
-                    {
-                        "data": "nominal_transaksi", "render": function (data, type, row) {
-                            var s = 'Rp. ' + data;
-                            return s;
-                        }
-                    },
-                    { "data": "nama_pasar" },
-                    { "data": "nama_distrik" },
-                    { "data": "nama_petugas" },
-                    {
-                        "className": 'details-control',
-                        "orderable": false,
-                        "data": null,
-                        "defaultContent": ''
-                    }
-                ],
+                "columns": baseColumns,
                 "order": [[0, 'asc']],
                 "paging": true,
                 "ordering": true,
@@ -440,11 +462,80 @@
             updateStats();
         });
 
-        // Filter Status onChange handler
-        $("#filter_status").on('change', function() {
-            console.log('Filter Status changed:', $(this).val());
+        // Filter Distrik onChange handler
+        $("#filter_distrik").on('change', function() {
+            console.log('Filter Distrik changed:', $(this).val());
             updateTable();
             updateStats();
+        });
+
+        // Hapus Transaksi handler (using event delegation)
+        $(document).on('click', '.btn-hapus-transaksi', function() {
+            var transactionId = $(this).data('id');
+            var pedagangName = $(this).data('pedagang');
+
+            Swal.fire({
+                title: 'Hapus Transaksi?',
+                html: 'Apakah Anda yakin ingin menghapus transaksi ini?<br><br>' +
+                      '<strong>ID Transaksi:</strong> ' + transactionId + '<br>' +
+                      '<strong>Pedagang:</strong> ' + pedagangName + '<br><br>' +
+                      '<span class="text-danger">Tagihan terkait akan direset ke status belum dibayar.</span>',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Ya, Hapus!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Show loading
+                    Swal.fire({
+                        title: 'Menghapus...',
+                        text: 'Mohon tunggu',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+
+                    // Call API to delete transaction
+                    $.ajax({
+                        url: "{{ env('APP_URL') }}/hapus_transaksi",
+                        method: "POST",
+                        timeout: 0,
+                        data: {
+                            transaction_id: transactionId,
+                            deleted_by: '{{ session('nama') }}'
+                        }
+                    }).done(function(response) {
+                        if (response.status === 1) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Berhasil!',
+                                text: response.message,
+                                timer: 2000,
+                                showConfirmButton: false
+                            });
+
+                            // Refresh table and stats
+                            updateTable();
+                            updateStats();
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Gagal!',
+                                text: response.message
+                            });
+                        }
+                    }).fail(function(xhr, status, error) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error!',
+                            text: 'Terjadi kesalahan saat menghapus transaksi: ' + error
+                        });
+                    });
+                }
+            });
         });
 
     }, { once: true })

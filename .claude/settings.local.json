@@ -3,7 +3,11 @@
     "allow": [
       "WebSearch",
       "WebFetch(domain:stackoverflow.com)",
-      "WebFetch(domain:datatables.net)"
+      "WebFetch(domain:datatables.net)",
+      "Bash(php artisan:*)",
+      "Bash(php:*)",
+      "Bash(php -l:*)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []

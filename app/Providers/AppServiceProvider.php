@@ -24,5 +24,6 @@ class AppServiceProvider extends ServiceProvider
         // Livewire::setLayout('layouts.app.blade.php'); // Sesuaikan dengan layout baru kamu
         config(['app.locale' => 'id']);
         Carbon::setLocale('id');
+        
     }
 }

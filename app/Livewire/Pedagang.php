@@ -61,8 +61,15 @@ class Pedagang extends Component
     
     public function fetchDataPedagang() {
         $nama_pasar = session('nama_pasar');
-        
-        if (empty($nama_pasar)) {
+        $role = session('role');
+
+        // Superadmin dapat melihat semua pedagang tanpa filter
+        if ($role === 'superadmin') {
+            $this->pedagang = DB::table('pedagang')
+                ->select('*')
+                ->orderBy('nama', 'asc')
+                ->get();
+        } else if (empty($nama_pasar)) {
             $this->pedagang = DB::table('pedagang')
                 ->select('*')
                 ->orderBy('nama', 'asc')
@@ -74,7 +81,7 @@ class Pedagang extends Component
                 ->orderBy('nama', 'asc')
                 ->get();
         }
-        
+
     }
     
     public function refreshDataTable() {
@@ -89,6 +96,12 @@ class Pedagang extends Component
     }
     
     public function edit($id) {
+        // Only superadmin can edit
+        if (session('role') !== 'superadmin') {
+            session()->flash('error', 'Anda tidak memiliki akses untuk mengedit pedagang!');
+            return;
+        }
+
         $pedagang = collect($this->pedagang)->firstWhere('id', $id);
         if ($pedagang) {
             $this->editingPedagang = $id;
@@ -168,9 +181,15 @@ class Pedagang extends Component
     }
     
     public function delete($id) {
+        // Only superadmin can delete
+        if (session('role') !== 'superadmin') {
+            session()->flash('error', 'Anda tidak memiliki akses untuk menghapus pedagang!');
+            return;
+        }
+
         try {
             $result = DB::table('pedagang')->where('id', $id)->delete();
-            
+
             if ($result) {
                 session()->flash('success', 'Pedagang berhasil dihapus!');
                 $this->refreshDataTable();

@@ -22,28 +22,47 @@ class Login extends Component
 
     public function login()
     {
+        // Cari admin berdasarkan username saja
         $admin = \DB::table('admin')
                     ->where('username', $this->username)
-                    ->where('password', $this->password) // Pastikan password di database tidak di-hash jika ini adalah perbandingan langsung
                     ->first();
 
         if ($admin) {
-            session()->put('id', $admin->id);
-            session()->put('nama', $admin->nama);
-            session()->put('nama_pasar', $admin->nama_pasar);
-            session()->put('id_pasar', $admin->id_pasar);
-            session()->put('username', $admin->username);
+            $passwordValid = false;
 
-            session()->save();
+            // Cek apakah password di database sudah hash (bcrypt)
+            // Bcrypt hash dimulai dengan "$2y$" atau "$2a$" atau "$2b$"
+            if (password_verify($this->password, $admin->password)) {
+                // Password cocok dengan hash
+                $passwordValid = true;
+            }
+            // Jika gagal dengan hash, coba plain text (backward compatibility)
+            elseif ($admin->password === $this->password) {
+                // Password masih plain text, login berhasil
+                $passwordValid = true;
+            }
 
-            return redirect()->route('home');
-        } else {
-            LivewireAlert::title('Gagal!')
-                ->text('Username atau password salah.')
-                ->error()
-                ->toast()
-                ->position('top-end')
-                ->show();
+            if ($passwordValid) {
+                // Set session
+                session()->put('id', $admin->id);
+                session()->put('nama', $admin->nama);
+                session()->put('nama_pasar', $admin->nama_pasar);
+                session()->put('id_pasar', $admin->id_pasar);
+                session()->put('username', $admin->username);
+                session()->put('role', $admin->role ?? 'admin');
+
+                session()->save();
+
+                return redirect()->route('home');
+            }
         }
+
+        // Login gagal
+        LivewireAlert::title('Gagal!')
+            ->text('Username atau password salah.')
+            ->error()
+            ->toast()
+            ->position('top-end')
+            ->show();
     }
 }

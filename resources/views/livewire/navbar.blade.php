@@ -1,100 +1,152 @@
-<nav class="navbar col-lg-12 col-12 p-0 fixed-top d-flex flex-row">
-  <div class="text-center navbar-brand-wrapper d-flex align-items-center justify-content-center">
-    <a class="navbar-brand brand-logo mr-5" href="index.html"><img src="images/logo-wide-login.png" class="mr-2"
-        alt="logo"></a>
-    <a class="navbar-brand brand-logo-mini" href="{{ route('home') }}"><img src="images/logo-mini.svg" alt="logo" /></a>
-  </div>
-  <div class="navbar-menu-wrapper d-flex align-items-center justify-content-end">
-    <button class="navbar-toggler navbar-toggler align-self-center" type="button" data-toggle="minimize">
-      <span class="icon-menu"></span>
-    </button>
-    <ul class="navbar-nav mr-lg-2">
-      <li class="nav-item nav-search d-none d-lg-block">
-        <div class="input-group">
-          <div class="input-group-prepend hover-cursor" id="navbar-search-icon">
-            <span class="input-group-text" id="search">
-              <i class="icon-search"></i>
-            </span>
+<div>
+  <nav class="navbar col-lg-12 col-12 p-0 fixed-top d-flex flex-row">
+    <div class="text-center navbar-brand-wrapper d-flex align-items-center justify-content-center">
+      <a class="navbar-brand brand-logo mr-5" href="index.html"><img src="images/logo-wide-login.png" class="mr-2"
+          alt="logo"></a>
+      <a class="navbar-brand brand-logo-mini" href="{{ route('home') }}"><img src="images/logo-mini.svg" alt="logo" /></a>
+    </div>
+    <div class="navbar-menu-wrapper d-flex align-items-center justify-content-end">
+      <button class="navbar-toggler navbar-toggler align-self-center" type="button" data-toggle="minimize">
+        <span class="icon-menu"></span>
+      </button>
+      <ul class="navbar-nav mr-lg-2">
+        <li class="nav-item nav-search d-none d-lg-block">
+          <div class="input-group">
+            <div class="input-group-prepend hover-cursor" id="navbar-search-icon">
+              <span class="input-group-text" id="search">
+                <i class="icon-search"></i>
+              </span>
+            </div>
+            <input type="text" class="form-control" id="navbar-search-input" placeholder="Search now" aria-label="search"
+              aria-describedby="search">
           </div>
-          <input type="text" class="form-control" id="navbar-search-input" placeholder="Search now" aria-label="search"
-            aria-describedby="search">
-        </div>
-      </li>
-    </ul>
-    <ul class="navbar-nav navbar-nav-right">
-      <li class="nav-item dropdown">
-        <a class="nav-link count-indicator dropdown-toggle" id="notificationDropdown" href="#" data-toggle="dropdown">
-          <i class="icon-bell mx-0"></i>
-          <span class="count"></span>
-        </a>
-        <div class="dropdown-menu dropdown-menu-right navbar-dropdown preview-list"
-          aria-labelledby="notificationDropdown">
-          <p class="mb-0 font-weight-normal float-left dropdown-header">Notifications</p>
-          <a class="dropdown-item preview-item">
-            <div class="preview-thumbnail">
-              <div class="preview-icon bg-success">
-                <i class="ti-info-alt mx-0"></i>
+        </li>
+      </ul>
+      <ul class="navbar-nav navbar-nav-right">
+        <li class="nav-item dropdown">
+          <a class="nav-link count-indicator dropdown-toggle" id="notificationDropdown" href="#" data-toggle="dropdown">
+            <i class="icon-bell mx-0"></i>
+            <span class="count"></span>
+          </a>
+          <div class="dropdown-menu dropdown-menu-right navbar-dropdown preview-list"
+            aria-labelledby="notificationDropdown">
+            <p class="mb-0 font-weight-normal float-left dropdown-header">Notifications</p>
+            <a class="dropdown-item preview-item">
+              <div class="preview-thumbnail">
+                <div class="preview-icon bg-success">
+                  <i class="ti-info-alt mx-0"></i>
+                </div>
               </div>
-            </div>
-            <div class="preview-item-content">
-              <h6 class="preview-subject font-weight-normal">Application Error</h6>
-              <p class="font-weight-light small-text mb-0 text-muted">
-                Just now
-              </p>
-            </div>
-          </a>
-          <a class="dropdown-item preview-item">
-            <div class="preview-thumbnail">
-              <div class="preview-icon bg-warning">
-                <i class="ti-settings mx-0"></i>
+              <div class="preview-item-content">
+                <h6 class="preview-subject font-weight-normal">Application Error</h6>
+                <p class="font-weight-light small-text mb-0 text-muted">
+                  Just now
+                </p>
               </div>
-            </div>
-            <div class="preview-item-content">
-              <h6 class="preview-subject font-weight-normal">Settings</h6>
-              <p class="font-weight-light small-text mb-0 text-muted">
-                Private message
-              </p>
-            </div>
-          </a>
-          <a class="dropdown-item preview-item">
-            <div class="preview-thumbnail">
-              <div class="preview-icon bg-info">
-                <i class="ti-user mx-0"></i>
+            </a>
+            <a class="dropdown-item preview-item">
+              <div class="preview-thumbnail">
+                <div class="preview-icon bg-warning">
+                  <i class="ti-settings mx-0"></i>
+                </div>
               </div>
-            </div>
-            <div class="preview-item-content">
-              <h6 class="preview-subject font-weight-normal">New user registration</h6>
-              <p class="font-weight-light small-text mb-0 text-muted">
-                2 days ago
-              </p>
-            </div>
+              <div class="preview-item-content">
+                <h6 class="preview-subject font-weight-normal">Settings</h6>
+                <p class="font-weight-light small-text mb-0 text-muted">
+                  Private message
+                </p>
+              </div>
+            </a>
+            <a class="dropdown-item preview-item">
+              <div class="preview-thumbnail">
+                <div class="preview-icon bg-info">
+                  <i class="ti-user mx-0"></i>
+                </div>
+              </div>
+              <div class="preview-item-content">
+                <h6 class="preview-subject font-weight-normal">New user registration</h6>
+                <p class="font-weight-light small-text mb-0 text-muted">
+                  2 days ago
+                </p>
+              </div>
+            </a>
+          </div>
+        </li>
+        <li class="nav-item nav-profile dropdown">
+          <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown" id="profileDropdown">
+            <img src="images/faces/face28.jpg" alt="profile" />
           </a>
+          <div class="dropdown-menu dropdown-menu-right navbar-dropdown" aria-labelledby="profileDropdown">
+            <a class="dropdown-item" wire:click="openPasswordModal" style="cursor: pointer;">
+              <i class="ti-settings text-primary"></i>
+              Ubah Password
+            </a>
+            <a class="dropdown-item" wire:click="logout" style="cursor: pointer;">
+              <i class="ti-power-off text-primary"></i>
+              Logout
+            </a>
+          </div>
+        </li>
+        <li class="nav-item nav-settings d-none d-lg-flex">
+          <a class="nav-link" href="#">
+            <i class="icon-ellipsis"></i>
+          </a>
+        </li>
+      </ul>
+      <button class="navbar-toggler navbar-toggler-right d-lg-none align-self-center" type="button"
+        data-toggle="offcanvas">
+        <span class="icon-menu"></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Modal Update Password -->
+  @if($isPasswordModalOpen)
+  <div class="modal fade show" style="display: block; background-color: rgba(0,0,0,0.5);" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Update Password</h5>
+          <button type="button" class="close" wire:click="closePasswordModal">
+            <span aria-hidden="true">&times;</span>
+          </button>
         </div>
-      </li>
-      <li class="nav-item nav-profile dropdown">
-        <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown" id="profileDropdown">
-          <img src="images/faces/face28.jpg" alt="profile" />
-        </a>
-        <div class="dropdown-menu dropdown-menu-right navbar-dropdown" aria-labelledby="profileDropdown">
-          <a class="dropdown-item">
-            <i class="ti-settings text-primary"></i>
-            Settings
-          </a>
-          <a class="dropdown-item" wire:click="logout">
-            <i class="ti-power-off text-primary"></i>
-            Logout
-          </a>
+        <div class="modal-body">
+          <form wire:submit.prevent="updatePassword">
+            <div class="form-group">
+              <label for="current_password">Password Saat Ini</label>
+              <input type="password" class="form-control @error('current_password') is-invalid @enderror"
+                     id="current_password" wire:model="current_password" placeholder="Masukkan password saat ini">
+              @error('current_password')
+                <div class="invalid-feedback">{{ $message }}</div>
+              @enderror
+            </div>
+
+            <div class="form-group">
+              <label for="new_password">Password Baru</label>
+              <input type="password" class="form-control @error('new_password') is-invalid @enderror"
+                     id="new_password" wire:model="new_password" placeholder="Masukkan password baru (min. 6 karakter)">
+              @error('new_password')
+                <div class="invalid-feedback">{{ $message }}</div>
+              @enderror
+            </div>
+
+            <div class="form-group">
+              <label for="repeat_password">Ulangi Password Baru</label>
+              <input type="password" class="form-control @error('repeat_password') is-invalid @enderror"
+                     id="repeat_password" wire:model="repeat_password" placeholder="Ulangi password baru">
+              @error('repeat_password')
+                <div class="invalid-feedback">{{ $message }}</div>
+              @enderror
+            </div>
+          </form>
         </div>
-      </li>
-      <li class="nav-item nav-settings d-none d-lg-flex">
-        <a class="nav-link" href="#">
-          <i class="icon-ellipsis"></i>
-        </a>
-      </li>
-    </ul>
-    <button class="navbar-toggler navbar-toggler-right d-lg-none align-self-center" type="button"
-      data-toggle="offcanvas">
-      <span class="icon-menu"></span>
-    </button>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" wire:click="closePasswordModal">Batal</button>
+          <button type="button" class="btn btn-primary" wire:click="updatePassword">Update Password</button>
+        </div>
+      </div>
+    </div>
   </div>
-</nav>
+  @endif
+</div>

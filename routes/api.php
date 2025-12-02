@@ -12,6 +12,7 @@ Route::post('/pedagang', [ApiController::class, 'pedagang']);
 Route::post('/generate-qr', [ApiController::class, 'generateQrCode']);
 Route::post('/tagihan', [ApiController::class, 'tagihan']);
 Route::post('/bayar', [ApiController::class, 'bayar']);
+Route::post('/hapus_transaksi', [ApiController::class, 'hapus_transaksi']);
 Route::post('/dashboard', [ApiController::class, 'dashboard']); // Rute baru untuk dashboard
 Route::post('/laporan', [ApiController::class, 'laporan']); // Rute baru untuk laporan
 
@@ -22,3 +23,8 @@ Route::post('/admin', [ApiController::class, 'admin']);
 Route::post('/tagihan_stat', [ApiController::class, 'tagihan_stat']);
 Route::post('/home_users_stat', [ApiController::class, 'home_users_stat']);
 Route::post('/filter_options', [ApiController::class, 'getFilterOptions']);
+Route::post('/payment_methods_chart', [ApiController::class, 'payment_methods_chart']);
+Route::post('/markets_chart', [ApiController::class, 'markets_chart']);
+Route::post('/tagihan_status_chart', [ApiController::class, 'tagihan_status_chart']);
+Route::post('/pasar_list', [ApiController::class, 'getPasarList']);
+Route::post('/update-password', [ApiController::class, 'updatePassword']);

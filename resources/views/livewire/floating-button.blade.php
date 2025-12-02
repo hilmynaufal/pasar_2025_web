@@ -1,22 +1,7 @@
 <div class="theme-setting-wrapper">
-    <div id="settings-trigger"><i class="ti-settings"></i></div>
-    <div id="theme-settings" class="settings-panel">
-        <i class="settings-close ti-close"></i>
-        <p class="settings-heading">SIDEBAR SKINS</p>
-        <div class="sidebar-bg-options selected" id="sidebar-light-theme">
-            <div class="img-ss rounded-circle bg-light border mr-3"></div>Light
-        </div>
-        <div class="sidebar-bg-options" id="sidebar-dark-theme">
-            <div class="img-ss rounded-circle bg-dark border mr-3"></div>Dark
-        </div>
-        <p class="settings-heading mt-2">HEADER SKINS</p>
-        <div class="color-tiles mx-0 px-4">
-            <div class="tiles success"></div>
-            <div class="tiles warning"></div>
-            <div class="tiles danger"></div>
-            <div class="tiles info"></div>
-            <div class="tiles dark"></div>
-            <div class="tiles default"></div>
-        </div>
-    </div>
+    <a href="https://wa.me/6282117525952" target="_blank" id="settings-trigger"
+       style="background: #25D366 !important; box-shadow: 0px 4px 8px rgba(37, 211, 102, 0.4); text-decoration: none; animation: none !important; display: flex; align-items: center; justify-content: center;"
+       title="Hubungi via WhatsApp">
+        <i class="mdi mdi-whatsapp" style="font-size: 32px; color: white; animation: none !important; line-height: 1;"></i>
+    </a>
 </div>

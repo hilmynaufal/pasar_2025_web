@@ -365,7 +365,12 @@
                     "orderable": false,
                     "data": null,
                     "render": function (data, type, row) {
-                        return '<button class="btn btn-sm btn-warning me-1" onclick="editPedagang(' + row.id + ')"><i class="icon-pencil"></i></button><button class="btn btn-sm btn-danger" onclick="deletePedagang(' + row.id + ')"><i class="icon-trash"></i></button>';
+                        var role = '{{ session("role") }}';
+                        if (role === 'superadmin') {
+                            return '<button class="btn btn-sm btn-warning me-1" onclick="editPedagang(' + row.id + ')"><i class="icon-pencil"></i></button><button class="btn btn-sm btn-danger" onclick="deletePedagang(' + row.id + ')"><i class="icon-trash"></i></button>';
+                        } else {
+                            return '<span class="badge badge-secondary">No Access</span>';
+                        }
                     }
                 }
             ],
