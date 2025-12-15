@@ -58,17 +58,17 @@
                     </div>
                   </div>
                   @if(session('role') === 'superadmin')
-                  <div class="col-md-4">
-                    <div class="form-group">
-                      <label>Pilih Pasar</label>
-                      <select class="form-control" wire:model="selected_pasar">
-                        <option value="">Semua Pasar</option>
-                        @foreach($pasar_list as $pasar)
-                          <option value="{{ $pasar->nama }}">{{ $pasar->nama }}</option>
-                        @endforeach
-                      </select>
+                    <div class="col-md-4">
+                      <div class="form-group">
+                        <label>Pilih Pasar</label>
+                        <select class="form-control" wire:model="selected_pasar">
+                          <option value="">Semua Pasar</option>
+                          @foreach($pasar_list as $pasar)
+                            <option value="{{ $pasar->nama }}">{{ $pasar->nama }}</option>
+                          @endforeach
+                        </select>
+                      </div>
                     </div>
-                  </div>
                   @endif
                 </div>
                 <button wire:click="applyFilters" class="btn btn-primary">
@@ -151,7 +151,8 @@
                 @if(session('role') === 'superadmin')
                   Perbandingan pendapatan harian antar pasar dalam periode yang dipilih. Setiap line mewakili satu pasar.
                 @else
-                  Pendapatan harian {{ session('nama_pasar') }} dalam periode yang dipilih dengan perbandingan periode sebelumnya (garis putus-putus)
+                  Pendapatan harian {{ session('nama_pasar') }} dalam periode yang dipilih dengan perbandingan periode
+                  sebelumnya (garis putus-putus)
                 @endif
               </p>
               <canvas id="areaChart"></canvas>
@@ -183,16 +184,16 @@
 
         <!-- Markets Chart (Superadmin Only) -->
         @if(session('role') === 'superadmin')
-        <div class="row">
-          <div class="col-md-12 grid-margin stretch-card">
-            <div class="card">
-              <div class="card-body">
-                <h4 class="card-title">Perbandingan Antar Pasar</h4>
-                <canvas id="marketsChart"></canvas>
+          <div class="row">
+            <div class="col-md-12 grid-margin stretch-card">
+              <div class="card">
+                <div class="card-body">
+                  <h4 class="card-title">Perbandingan Antar Pasar</h4>
+                  <canvas id="marketsChart"></canvas>
+                </div>
               </div>
             </div>
           </div>
-        </div>
         @endif
 
         <!-- User Statistics -->
@@ -206,7 +207,8 @@
                       <div class="ml-xl-4 mt-3">
                         <p class="card-title">Detailed Reports</p>
                         <h1 class="text-primary">Rp. {{ number_format($data->total_nominal_30_hari_terakhir ?? 0)}}</h1>
-                        <h3 class="font-weight-500 mb-xl-4 text-primary">{{ $selected_pasar ?? session('nama_pasar') }}</h3>
+                        <h3 class="font-weight-500 mb-xl-4 text-primary">{{ $selected_pasar ?? session('nama_pasar') }}
+                        </h3>
                         <p class="mb-2 mb-xl-0">Total transaksi dalam 30 hari terakhir berdasarkan petugas</p>
                       </div>
                     </div>
@@ -420,11 +422,11 @@
     }
 
     var data_home = {
-        "tanggal": "{{ $date }}",
-        "nama_pasar": getNamaPasar(),
-        "start_date": @this.get('start_date'),
-        "end_date": @this.get('end_date')
-      };
+      "tanggal": "{{ $date }}",
+      "nama_pasar": getNamaPasar(),
+      "start_date": @this.get('start_date'),
+      "end_date": @this.get('end_date')
+    };
 
     // Load main statistics
     var settings = {
@@ -526,7 +528,7 @@
 
         // Build datasets untuk Chart.js
         var chartDatasets = [];
-        data.datasets.forEach(function(dataset, index) {
+        data.datasets.forEach(function (dataset, index) {
           var colorIndex = index % pasarColors.length;
 
           // Check if this is previous period data
@@ -563,7 +565,7 @@
               mode: 'index',
               intersect: false,
               callbacks: {
-                label: function(tooltipItem, data) {
+                label: function (tooltipItem, data) {
                   var datasetIndex = tooltipItem.datasetIndex;
                   var index = tooltipItem.index;
                   var dataset = data.datasets[datasetIndex];
@@ -604,7 +606,7 @@
               yAxes: [{
                 ticks: {
                   beginAtZero: true,
-                  callback: function(value) {
+                  callback: function (value) {
                     return 'Rp ' + value.toLocaleString('id-ID');
                   }
                 }
@@ -625,7 +627,7 @@
       } catch (error) {
         console.error('Error creating revenue chart:', error);
       }
-    }).fail(function(xhr, status, error) {
+    }).fail(function (xhr, status, error) {
       console.error('Failed to load revenue chart:', error);
     });
 
@@ -690,7 +692,7 @@
       } catch (error) {
         console.error('Error creating payment methods chart:', error);
       }
-    }).fail(function(xhr, status, error) {
+    }).fail(function (xhr, status, error) {
       console.error('Failed to load payment methods chart:', error);
     });
 
@@ -755,7 +757,7 @@
       } catch (error) {
         console.error('Error creating tagihan status chart:', error);
       }
-    }).fail(function(xhr, status, error) {
+    }).fail(function (xhr, status, error) {
       console.error('Failed to load tagihan status chart:', error, xhr.responseText);
     });
 
@@ -826,7 +828,7 @@
         } catch (error) {
           console.error('Error creating markets chart:', error);
         }
-      }).fail(function(xhr, status, error) {
+      }).fail(function (xhr, status, error) {
         console.error('Failed to load markets chart:', error);
       });
     }

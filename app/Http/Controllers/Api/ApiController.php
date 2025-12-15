@@ -455,39 +455,63 @@ class ApiController extends Controller
         $nama_pasar = $request->input('nama_pasar');
         $nama_distrik = $request->input('nama_distrik');
 
-
-
-        $query = DB::table('transaksi')
+        // Query untuk total nominal semua metode pembayaran
+        $queryTotal = DB::table('transaksi')
             ->select(DB::raw('SUM(nominal_transaksi) as total_nominal'))
             ->where(DB::raw('DATE(tanggal_transaksi)'), $tanggal);
-        // ->groupBy('nama_pasar');
+
+        // Query untuk total nominal Tunai
+        $queryTunai = DB::table('transaksi')
+            ->select(DB::raw('SUM(nominal_transaksi) as total_nominal_tunai'))
+            ->where(DB::raw('DATE(tanggal_transaksi)'), $tanggal)
+            ->where('metode_pembayaran', 'Tunai');
+
+        // Query untuk total nominal QRIS
+        $queryQris = DB::table('transaksi')
+            ->select(DB::raw('SUM(nominal_transaksi) as total_nominal_qris'))
+            ->where(DB::raw('DATE(tanggal_transaksi)'), $tanggal)
+            ->where('metode_pembayaran', 'QRIS');
 
         if (!empty($id)) {
-            $query->select(DB::raw('id_petugas, SUM(nominal_transaksi) as total_nominal'))
-                ->where('id_petugas', $id)
-                ->groupBy('id_petugas');
+            $queryTotal->where('id_petugas', $id);
+            $queryTunai->where('id_petugas', $id);
+            $queryQris->where('id_petugas', $id);
         }
 
         //Tambahkan kondisi jika nama_pasar tidak kosong
         if (!empty($nama_pasar)) {
-            $query->select(DB::raw('nama_pasar, SUM(nominal_transaksi) as total_nominal'))
-                ->where('nama_pasar', $nama_pasar)
-                ->groupBy('nama_pasar');
+            $queryTotal->where('nama_pasar', $nama_pasar);
+            $queryTunai->where('nama_pasar', $nama_pasar);
+            $queryQris->where('nama_pasar', $nama_pasar);
         }
 
         // Tambahkan kondisi jika nama_distrik tidak kosong
         if (!empty($nama_distrik)) {
-            $query->select(DB::raw('nama_distrik, SUM(nominal_transaksi) as total_nominal'))
-                ->where('nama_distrik', $nama_distrik)
-                ->groupBy('nama_distrik');
+            $queryTotal->where('nama_distrik', $nama_distrik);
+            $queryTunai->where('nama_distrik', $nama_distrik);
+            $queryQris->where('nama_distrik', $nama_distrik);
         }
 
-        $totalNominal = $query->get()->toArray();
+        $resultTotal = $queryTotal->get()->toArray();
+        $resultTunai = $queryTunai->get()->toArray();
+        $resultQris = $queryQris->get()->toArray();
 
-        if (empty($totalNominal)) {
+        if (empty($resultTotal) || empty($resultTotal[0]->total_nominal)) {
             $totalNominal = "0";
         } else {
-            $totalNominal = $totalNominal[0]->total_nominal;
+            $totalNominal = $resultTotal[0]->total_nominal;
+        }
+
+        if (empty($resultTunai) || empty($resultTunai[0]->total_nominal_tunai)) {
+            $totalNominalTunai = "0";
+        } else {
+            $totalNominalTunai = $resultTunai[0]->total_nominal_tunai;
+        }
+
+        if (empty($resultQris) || empty($resultQris[0]->total_nominal_qris)) {
+            $totalNominalQris = "0";
+        } else {
+            $totalNominalQris = $resultQris[0]->total_nominal_qris;
         }
 
         $queryJumlahTransaksi = DB::table('transaksi')
@@ -514,6 +538,8 @@ class ApiController extends Controller
             'message' => 'Data dashboard berhasil diambil',
             'data' => [
                 "total_nominal" => $totalNominal,
+                "total_nominal_tunai" => $totalNominalTunai,
+                "total_nominal_qris" => $totalNominalQris,
                 "jumlah_transaksi" => $jumlahTransaksi
             ]
         ], 200);
@@ -541,7 +567,7 @@ class ApiController extends Controller
             ->groupBy('status');
 
         // Superadmin tanpa filter pasar atau admin dengan filter pasar
-        if ($role !== 'superadmin' && !empty($nama_pasar)) {
+        if (!empty($nama_pasar)) {
             $queryHariIni->where('nama_pasar', $nama_pasar);
         }
 
@@ -584,13 +610,13 @@ class ApiController extends Controller
         $queryJumlahTransaksi30HariTerakhir = DB::table('transaksi')
             ->where('tanggal_transaksi', '>=', Carbon::parse($date30DaysAgo)->startOfDay());
 
-        if ($role !== 'superadmin' && !empty($nama_pasar)) {
+        if (!empty($nama_pasar)) {
             $queryJumlahTransaksi30HariTerakhir->where('nama_pasar', $nama_pasar);
         }
 
         $jumlahTransaksi30HariTerakhir = $queryJumlahTransaksi30HariTerakhir->count();
 
-        $data_home_users_stat = $this->home_users_stat($nama_pasar, $role, $date30DaysAgo);
+        $data_home_users_stat = $this->home_users_stat($nama_pasar, $date30DaysAgo);
 
         return response()->json([
             'status' => 1,
@@ -605,8 +631,10 @@ class ApiController extends Controller
         ], 200);
     }
 
-    public function home_users_stat($nama_pasar = "Pasar Cicalengka", $role = 'admin', $date30DaysAgo = null)
+    public function home_users_stat($nama_pasar, $date30DaysAgo = null)
     {
+
+        // dd($nama_pasar);
         if ($date30DaysAgo === null) {
             $date30DaysAgo = Carbon::now()->subDays(30)->format('Y-m-d');
         }
@@ -1008,7 +1036,7 @@ class ApiController extends Controller
             ->select(DB::raw('status, COUNT(*) as total'))
             ->where('tanggal_tagihan', $tanggal);
 
-        if ($role !== 'superadmin' && !empty($nama_pasar)) {
+        if (!empty($nama_pasar)) {
             $query->where('merchant_id', $nama_pasar);
         }
 
@@ -1197,6 +1225,112 @@ class ApiController extends Controller
             return response()->json([
                 'status' => 0,
                 'message' => 'Gagal update password: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function updatePetugasPassword(Request $request)
+    {
+        try {
+            // Validasi input
+            $request->validate([
+                'id' => 'required|integer',
+                'current_password' => 'required',
+                'new_password' => 'required|min:6',
+            ]);
+
+            $id = $request->id;
+            $currentPassword = $request->current_password;
+            $newPassword = $request->new_password;
+
+            // Ambil data petugas
+            $petugas = DB::table('petugas')
+                ->where('id', $id)
+                ->first();
+
+            if (!$petugas) {
+                return response()->json([
+                    'status' => 0,
+                    'message' => 'Petugas tidak ditemukan'
+                ], 404);
+            }
+
+            // Cek password saat ini (plain text untuk testing)
+            if ($petugas->password !== $currentPassword) {
+                return response()->json([
+                    'status' => 0,
+                    'message' => 'Password saat ini tidak sesuai'
+                ], 400);
+            }
+
+            // Update password di database (plain text untuk testing)
+            DB::table('petugas')
+                ->where('id', $id)
+                ->update([
+                    'password' => $newPassword
+                ]);
+
+            Log::info('Password petugas berhasil diupdate', [
+                'petugas_id' => $id,
+                'username' => $petugas->username ?? null,
+                'timestamp' => now()
+            ]);
+
+            return response()->json([
+                'status' => 1,
+                'message' => 'Password berhasil diupdate'
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::error('Gagal update password petugas: ' . $e->getMessage(), [
+                'petugas_id' => $request->id ?? null,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'status' => 0,
+                'message' => 'Gagal update password petugas: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getQrisCode(Request $request)
+    {
+        try {
+            // Validasi input
+            $request->validate([
+                'nama_pasar' => 'required|string'
+            ]);
+
+            $namaPasar = $request->nama_pasar;
+
+            // Ambil data dari tabel pasar dengan kondisi nama = nama_pasar
+            $pasar = DB::table('pasar')
+                ->where('nama', $namaPasar)
+                ->first();
+
+            if (!$pasar) {
+                return response()->json([
+                    'status' => 0,
+                    'message' => 'Data pasar tidak ditemukan'
+                ], 404);
+            }
+
+            return response()->json([
+                'status' => 1,
+                'message' => 'Data QRIS Code berhasil diambil',
+                'data' => $pasar
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::error('Gagal mengambil data QRIS Code: ' . $e->getMessage(), [
+                'nama_pasar' => $request->nama_pasar ?? null,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'status' => 0,
+                'message' => 'Gagal mengambil data QRIS Code: ' . $e->getMessage()
             ], 500);
         }
     }

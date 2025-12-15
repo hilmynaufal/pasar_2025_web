@@ -28,3 +28,5 @@ Route::post('/markets_chart', [ApiController::class, 'markets_chart']);
 Route::post('/tagihan_status_chart', [ApiController::class, 'tagihan_status_chart']);
 Route::post('/pasar_list', [ApiController::class, 'getPasarList']);
 Route::post('/update-password', [ApiController::class, 'updatePassword']);
+Route::post('/update-petugas-password', [ApiController::class, 'updatePetugasPassword']);
+Route::post('/get-qris-code', [ApiController::class, 'getQrisCode']);
