@@ -107,6 +107,47 @@ class ApiController extends Controller
         return response()->json($array, 200);
     }
 
+    public function tagihan_backup(Request $request)
+    {
+
+        // $id_kios = $request->id_kios;
+        // $id_pedagang = $request->id_kios;
+        $tanggal = $request->tanggal;
+
+        // Jika id_kios kosong, gunakan id_pedagang
+        $id_kios = $request->id_kios;
+        $id_pedagang = $request->id_pedagang;
+        $nama_pasar = $request->nama_pasar;
+        $salesman = $request->salesman;
+
+        $query = DB::table('tagihan')
+            ->select('*')
+            ->orderBy('id', 'asc');
+
+        if (!empty($id_kios)) {
+            $query->whereRaw("BINARY id_kios = ?", [$id_kios]);
+        } else if (!empty($id_pedagang)) {
+            $query->whereRaw('BINARY pedagang_id = ?', [$id_pedagang]);
+        }
+
+        // Tambahan: jika nama pasar tidak kosong
+        if (!empty($nama_pasar)) {
+            $query->where('merchant_id', $nama_pasar);
+        }
+
+        if (!empty($tanggal)) {
+            $query->where('tanggal_tagihan', $tanggal);
+        }
+
+        if (!empty($salesman)) {
+            $query->where('salesman', $salesman);
+        }
+
+        $tagihan = $query->get()->toArray();
+
+        $array = ['status' => 1, 'data' => $tagihan, 'pages' => 0];
+        return response()->json($array, 200);
+    }
 
 
     public function bayar(Request $request)
@@ -150,7 +191,7 @@ class ApiController extends Controller
                 'jenis_akun' => $request->jenis_akun,
                 'nama_pasar' => $request->nama_pasar,
                 'nama_petugas' => $request->nama_petugas,
-                'nama_distrik' => $request->nama_distrik,
+                'nama_distrik' => $request->kode_kios,
                 'id_petugas' => $request->id_petugas,
                 'status' => "SUCCESS",
                 // 'created_at' => $now,
@@ -261,12 +302,12 @@ class ApiController extends Controller
     public function hapus_transaksi(Request $request)
     {
         // Cek apakah user adalah superadmin
-        if (session('role') !== 'superadmin') {
-            return response()->json([
-                'status' => 0,
-                'message' => 'Akses ditolak. Hanya superadmin yang dapat menghapus transaksi.'
-            ], 403);
-        }
+        // if (session('role') !== 'superadmin') {
+        //     return response()->json([
+        //         'status' => 0,
+        //         'message' => 'Akses ditolak. Hanya superadmin yang dapat menghapus transaksi.'
+        //     ], 403);
+        // }
 
         $transaction_id = $request->transaction_id;
 
@@ -367,7 +408,38 @@ class ApiController extends Controller
         }
 
         if (!empty($nama_distrik)) {
-            $query->where('nama_distrik', $nama_distrik);
+            $query->where('nama_distrik', 'like', $nama_distrik . '%');
+        }
+
+        $laporan = $query->get()->toArray();
+
+        $array = ['status' => 1, 'data' => $laporan, 'pages' => 0];
+        return response()->json($array, 200);
+    }
+
+    public function laporan_transaksi(Request $request)
+    {
+
+        $tanggal = $request->tanggal;
+        $id = $request->id_petugas;
+        $nama_pasar = $request->nama_pasar;
+        $nama_distrik = $request->nama_distrik;
+
+        $query = DB::table('transaksi')
+            ->select('transaksi.*', 'tagihan.tarif')
+            ->leftJoin('tagihan', 'transaksi.id', '=', 'tagihan.transaction_id')
+            ->where(DB::raw('DATE(tanggal_transaksi)'), $tanggal);
+
+        if (!empty($id)) {
+            $query->where('transaksi.id_petugas', $id);
+        }
+
+        if (!empty($nama_pasar)) {
+            $query->where('transaksi.nama_pasar', $nama_pasar);
+        }
+
+        if (!empty($nama_distrik)) {
+            $query->where('transaksi.nama_distrik', 'like', $nama_distrik . '%');
         }
 
         $laporan = $query->get()->toArray();
@@ -412,6 +484,7 @@ class ApiController extends Controller
         // $id = $request->input("id");
         $tanggal = $request->input('tanggal');
         $nama_pasar = $request->nama_pasar;
+        $salesman = $request->salesman;
 
         $query = DB::table('tagihan')
             ->select(DB::raw('id, status'))
@@ -420,6 +493,11 @@ class ApiController extends Controller
         // Jika nama pasar tidak kosong, tambahkan kondisi where
         if (!empty($nama_pasar)) {
             $query->where('merchant_id', $nama_pasar);
+        }
+
+        // Jika nama pasar tidak kosong, tambahkan kondisi where
+        if (!empty($salesman)) {
+            $query->where('salesman', $salesman);
         }
         // ->groupBy('status');
 
@@ -528,7 +606,7 @@ class ApiController extends Controller
 
         // Tambahkan kondisi jika nama_distrik tidak kosong
         if (!empty($nama_distrik)) {
-            $queryJumlahTransaksi->where('nama_distrik', $nama_distrik);
+            $queryJumlahTransaksi->where('nama_distrik', 'like', $nama_distrik . '%');
         }
 
         $jumlahTransaksi = $queryJumlahTransaksi->count();
@@ -947,9 +1025,94 @@ class ApiController extends Controller
             $distrikList->where('nama_pasar', $nama_pasar);
         }
 
-        $distrikList = $distrikList->orderBy('nama_distrik', 'asc')
+        $rawDistrikList = $distrikList->orderBy('nama_distrik', 'asc')
             ->pluck('nama_distrik')
             ->toArray();
+
+        $distrikList = [];
+        foreach ($rawDistrikList as $distrik) {
+            // Remove trailing -001, -002 etc (handle potential whitespace)
+            $cleanName = trim($distrik);
+            $cleanName = preg_replace('/[\s\p{Pd}]+\d+[a-zA-Z]*$/u', '', $cleanName);
+            // Log::info("Distrik: '$distrik' -> '$cleanName'");
+            if (!in_array($cleanName, $distrikList)) {
+                $distrikList[] = $cleanName;
+            }
+        }
+        sort($distrikList);
+        // Log::info("Distrik List: " . json_encode($distrikList));
+        // dd($distrikList);
+
+        return response()->json([
+            'status' => 1,
+            'data' => [
+                'pasar' => $pasarList,
+                'petugas' => $petugasList,
+                'distrik' => $distrikList
+            ]
+        ], 200);
+    }
+
+    public function getFilterOptionsTagihan(Request $request)
+    {
+        $nama_pasar = $request->nama_pasar;
+
+        // Ambil nama pasar dari tabel pasar
+        $pasarListQuery = DB::table('pasar')
+            ->select('nama');
+
+        if (!empty($nama_pasar)) {
+            $pasarListQuery->where('nama', $nama_pasar);
+        }
+        $pasarListQuery = $pasarListQuery
+            ->whereNotNull('nama')
+            ->where('nama', '!=', '')
+            ->orderBy('nama', 'asc');
+        $pasarList = $pasarListQuery->pluck('nama')->toArray();
+
+        // Get distinct petugas (officers) - only from the same pasar
+        $petugasList = DB::table('tagihan')
+            ->select('salesman')
+            ->distinct()
+            ->whereNotNull('salesman')
+            ->where('salesman', '!=', '');
+
+        if (!empty($nama_pasar)) {
+            $petugasList->where('merchant_id', $nama_pasar);
+        }
+
+        $petugasList = $petugasList->orderBy('salesman', 'asc')
+            ->get()
+            ->toArray();
+
+        // Get distinct district (nama_distrik)
+        $distrikList = DB::table('tagihan')
+            ->select('id_kios')
+            ->distinct()
+            ->whereNotNull('id_kios')
+            ->where('id_kios', '!=', '');
+
+        if (!empty($nama_pasar)) {
+            $distrikList->where('merchant_id', $nama_pasar);
+        }
+
+        $rawDistrikList = $distrikList->orderBy('id_kios', 'asc')
+            ->pluck('id_kios')
+            ->toArray();
+
+        $distrikList = [];
+        foreach ($rawDistrikList as $distrik) {
+            // Remove trailing -001, -002 etc (handle potential whitespace)
+            $cleanName = trim($distrik);
+            $cleanName = preg_replace('/[\s\p{Pd}]+\d+[a-zA-Z]*$/u', '', $cleanName);
+            // Log::info("Distrik: '$distrik' -> '$cleanName'");
+            if (!in_array($cleanName, $distrikList)) {
+                $distrikList[] = $cleanName;
+            }
+        }
+        sort($distrikList);
+        // Log::info("Distrik List: " . json_encode($distrikList));
+        // dd($distrikList);
 
         return response()->json([
             'status' => 1,

@@ -98,14 +98,9 @@
                                                     <th>Kode Kios</th>
                                                     <th>Pedagang</th>
                                                     <th>Nominal Bayar</th>
-                                                    <th>Tarif</th>
-                                                    <th>Selisih</th>
                                                     <th>Nama Pasar</th>
                                                     <th>Nama Distrik</th>
                                                     <th>Nama Petugas</th>
-                                                    @if(session('role') === 'superadmin')
-                                                        <th>Aksi</th>
-                                                    @endif
                                                 </tr>
                                             </thead>
                                         </table>
@@ -387,43 +382,10 @@
                         return s;
                     }
                 },
-                {
-                    "data": "tarif", "render": function (data, type, row) {
-                        if (data == null || data == "") return "";
-                        var s = 'Rp. ' + data;
-                        return s;
-                    }
-                },
-                {
-                    "data": null, "render": function (data, type, row) {
-                        var tarif = parseFloat(row.tarif) || 0;
-                        var nominal = parseFloat(row.nominal_transaksi) || 0;
-                        var selisih = tarif - nominal;
-
-
-                        return 'Rp. ' + selisih;
-                    }
-                },
                 { "data": "nama_pasar" },
                 { "data": "nama_distrik" },
                 { "data": "nama_petugas" }
             ];
-
-            // Check if superadmin and add action column (check if action header exists)
-            var headerCount = $('#tagihan thead tr th').length;
-            if (headerCount > 10) {
-                baseColumns.push({
-                    "className": 'text-center',
-                    "orderable": false,
-                    "data": null,
-                    "render": function (data, type, row) {
-                        var pedagangName = String(row.nama_pedagang || '').replace(/'/g, "\\'").replace(/"/g, "&quot;");
-                        return '<button class="btn btn-danger btn-sm btn-hapus-transaksi" data-id="' + row.id + '" data-pedagang="' + pedagangName + '">' +
-                            '<i class="mdi mdi-delete"></i> Hapus' +
-                            '</button>';
-                    }
-                });
-            }
 
             var table = new DataTable('#tagihan', {
                 layout: {

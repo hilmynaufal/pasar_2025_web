@@ -31,7 +31,7 @@ class Transaksi extends Component
     { // Tambahkan metode baru
         Log::info('Tanggal yang digunakan: ' . $this->date); // Menambahkan log untuk mencetak tanggal
 
-        $response = Http::post(env('API_BASE_URL') . '/laporan', ["tanggal" => $this->date]); // Mengambil URL API dari .env
+        $response = Http::post(env('API_BASE_URL') . '/laporan_transaksi', ["tanggal" => $this->date]); // Mengambil URL API dari .env
         $this->transaksi = $response->json()['data'];
 
         // $response = Http::post(env('API_BASE_URL') . '/dashboard', ["tanggal" => $this->date]); // Mengambil URL API dari .env
@@ -43,7 +43,7 @@ class Transaksi extends Component
     {
         $data = [];
         if (session('nama_pasar') != "All") {
-            $data['nama_pasar'] = session( 'nama_pasar');
+            $data['nama_pasar'] = session('nama_pasar');
         } else {
             $data['nama_pasar'] = null;
         }
@@ -53,6 +53,27 @@ class Transaksi extends Component
         $this->pasar_options = $data['pasar'];
         $this->petugas_options = $data['petugas'];
         $this->distrik_options = $data['distrik'];
+    }
+
+    public function updatedFilterPasar($value)
+    {
+        $this->filter_petugas = '';
+        $this->filter_distrik = '';
+
+        $data = [];
+        if (session('nama_pasar') != "All") {
+            $data['nama_pasar'] = session('nama_pasar');
+        } else {
+            $data['nama_pasar'] = $value ?: null;
+        }
+
+        $response = Http::post(env('API_BASE_URL') . '/filter_options', $data);
+
+        if ($response->successful()) {
+            $data = $response->json()['data'];
+            $this->petugas_options = $data['petugas'];
+            $this->distrik_options = $data['distrik'];
+        }
     }
 
     public function mount()
@@ -65,6 +86,9 @@ class Transaksi extends Component
 
     public function render()
     {
-        return view('livewire.transaksi');
+        if (session('role') === 'superadmin') {
+            return view('livewire.transaksi');
+        }
+        return view('livewire.transaksi_non_superadmin');
     }
 }

@@ -16,7 +16,7 @@ class Pedagang extends Component
     public $showQrModal = false;
     public $qrCodeUrl = '';
     public $qrPedagangNama = '';
-    
+
     // Form fields
     public $nama = '';
     public $kode_kios = '';
@@ -26,40 +26,56 @@ class Pedagang extends Component
     public $alamat = '';
     public $jenis_dagangan = '';
     public $email = '';
-    
+    public $nama_pasar = '';
+    public $pasar_list = [];
+
     protected $rules = [
-        'nama' => 'required|string|max:255',
-        'kode_kios' => 'required|string|max:50',
-        'id_kios' => 'required|string|max:50',
-        'tarif' => 'required|numeric|min:0',
+        'nama' => 'nullable|string|max:255',
+        'kode_kios' => 'nullable|string|max:50',
+        'id_kios' => 'nullable|string|max:50',
+        'tarif' => 'nullable|numeric|min:0',
         'nomor_identitas' => 'nullable|string|max:50',
         'alamat' => 'nullable|string|max:500',
-        'jenis_dagangan' => 'required|string|max:255',
+        'jenis_dagangan' => 'nullable|string|max:255',
         'email' => 'nullable|email|max:255'
     ];
-    
+
     protected function rules()
     {
         $rules = $this->rules;
-        
+
+        // Jika superadmin, tambahkan validasi nama_pasar
+        if (session('role') === 'superadmin') {
+            $rules['nama_pasar'] = 'required|string|max:255';
+        }
+
         if ($this->editingPedagang) {
             // Saat edit, pastikan kode_kios dan id_kios unik kecuali untuk record yang sedang diedit
             $rules['kode_kios'] .= '|unique:pedagang,kode_kios,' . $this->editingPedagang;
-            $rules['id_kios'] .= '|unique:pedagang,id_kios,' . $this->editingPedagang;
+            $rules['id_kios'] = 'nullable|string|max:50|unique:pedagang,id_kios,' . $this->editingPedagang;
         } else {
             // Saat create, pastikan kode_kios dan id_kios unik
             $rules['kode_kios'] .= '|unique:pedagang,kode_kios';
             $rules['id_kios'] .= '|unique:pedagang,id_kios';
         }
-        
+
         return $rules;
     }
-    
-    public function mount() {
+
+    public function mount()
+    {
+        // Load pasar list jika superadmin
+        if (session('role') === 'superadmin') {
+            $this->pasar_list = DB::table('pasar')
+                ->select('nama')
+                ->orderBy('nama', 'asc')
+                ->get();
+        }
         $this->fetchDataPedagang();
     }
-    
-    public function fetchDataPedagang() {
+
+    public function fetchDataPedagang()
+    {
         $nama_pasar = session('nama_pasar');
         $role = session('role');
 
@@ -83,19 +99,28 @@ class Pedagang extends Component
         }
 
     }
-    
-    public function refreshDataTable() {
+
+    public function refreshDataTable()
+    {
         $this->fetchDataPedagang();
         $this->dispatch('dataTableRefresh');
     }
-    
-    public function create() {
+
+    public function create()
+    {
         $this->resetForm();
+        // Set default nama_pasar berdasarkan role
+        if (session('role') === 'superadmin') {
+            $this->nama_pasar = '';
+        } else {
+            $this->nama_pasar = session('nama_pasar');
+        }
         $this->showModal = true;
         $this->editingPedagang = null;
     }
-    
-    public function edit($id) {
+
+    public function edit($id)
+    {
         // Only superadmin can edit
         if (session('role') !== 'superadmin') {
             session()->flash('error', 'Anda tidak memiliki akses untuk mengedit pedagang!');
@@ -107,19 +132,24 @@ class Pedagang extends Component
             $this->editingPedagang = $id;
             $this->nama = $pedagang->nama;
             $this->kode_kios = $pedagang->kode_kios;
-            $this->id_kios = $pedagang->id_kios;
+            $this->id_kios = '';
             $this->tarif = $pedagang->tarif;
             $this->nomor_identitas = $pedagang->nomor_identitas ?? '';
             $this->alamat = $pedagang->alamat ?? '';
             $this->jenis_dagangan = $pedagang->jenis_dagangan;
             $this->email = $pedagang->email ?? '';
+            $this->nama_pasar = $pedagang->nama_pasar ?? '';
             $this->showModal = true;
         }
     }
-    
-    public function save() {
+
+    public function save()
+    {
         $this->validate($this->rules());
-        
+
+        // Tentukan nama_pasar berdasarkan role
+        $nama_pasar = session('role') === 'superadmin' ? $this->nama_pasar : session('nama_pasar');
+
         $data = [
             'nama' => $this->nama,
             'kode_kios' => $this->kode_kios,
@@ -129,17 +159,21 @@ class Pedagang extends Component
             'alamat' => $this->alamat,
             'jenis_dagangan' => $this->jenis_dagangan,
             'email' => $this->email,
-            'nama_pasar' => session('nama_pasar'),
+            'nama_pasar' => $nama_pasar,
             'updated_at' => now()
         ];
-        
+
+        if ($this->editingPedagang && empty($this->id_kios)) {
+            unset($data['id_kios']);
+        }
+
         try {
             if ($this->editingPedagang) {
                 // Update existing pedagang
                 $result = DB::table('pedagang')
                     ->where('id', $this->editingPedagang)
                     ->update($data);
-                
+
                 if ($result) {
                     session()->flash('success', 'Pedagang berhasil diperbarui!');
                 } else {
@@ -171,16 +205,17 @@ class Pedagang extends Component
                     return;
                 }
             }
-            
+
             $this->refreshDataTable();
             $this->closeModal();
-            
+
         } catch (\Exception $e) {
             session()->flash('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
-    
-    public function delete($id) {
+
+    public function delete($id)
+    {
         // Only superadmin can delete
         if (session('role') !== 'superadmin') {
             session()->flash('error', 'Anda tidak memiliki akses untuk menghapus pedagang!');
@@ -200,14 +235,16 @@ class Pedagang extends Component
             session()->flash('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
-    
-    public function closeModal() {
+
+    public function closeModal()
+    {
         $this->showModal = false;
         $this->resetForm();
         $this->editingPedagang = null;
     }
-    
-    public function resetForm() {
+
+    public function resetForm()
+    {
         $this->nama = '';
         $this->kode_kios = '';
         $this->id_kios = '';
@@ -216,10 +253,12 @@ class Pedagang extends Component
         $this->alamat = '';
         $this->jenis_dagangan = '';
         $this->email = '';
+        $this->nama_pasar = '';
         $this->resetErrorBag();
     }
 
-    public function generateQr($id) {
+    public function generateQr($id)
+    {
         try {
             $url = env('API_BASE_URL') . '/generate-qr';
             $response = Http::post($url, [
@@ -238,7 +277,8 @@ class Pedagang extends Component
         }
     }
 
-    public function viewQr($id, $qrCodeFile, $nama) {
+    public function viewQr($id, $qrCodeFile, $nama)
+    {
         if (!empty($qrCodeFile)) {
             $this->qrCodeUrl = url('qr_codes/' . $qrCodeFile);
             $this->qrPedagangNama = $nama;
@@ -248,7 +288,8 @@ class Pedagang extends Component
         }
     }
 
-    public function closeQrModal() {
+    public function closeQrModal()
+    {
         $this->showQrModal = false;
         $this->qrCodeUrl = '';
         $this->qrPedagangNama = '';

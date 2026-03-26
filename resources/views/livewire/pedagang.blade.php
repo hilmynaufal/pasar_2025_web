@@ -1,7 +1,7 @@
 <div>
     <div class="container-scroller">
         <!-- partial:partials/_navbar.html -->
-        <livewire:nav-bar/>
+        <livewire:nav-bar />
         <!-- partial -->
         <div class="container-fluid page-body-wrapper">
             <!-- partial:partials/_settings-panel.html -->
@@ -85,23 +85,52 @@
     <!-- container-scroller -->
 
     <style>
-    .modal.show {
-        display: block !important;
-    }
-    .alert {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        z-index: 9999;
-        min-width: 300px;
-    }
-    .btn-sm {
-        padding: 0.25rem 0.5rem;
-        font-size: 0.875rem;
-    }
-    .me-1 {
-        margin-right: 0.25rem !important;
-    }
+        .modal.show {
+            display: block !important;
+        }
+
+        .alert {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            min-width: 300px;
+        }
+
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .me-1 {
+            margin-right: 0.25rem !important;
+        }
+
+        /* Modal Scrollable */
+        .modal-dialog {
+            max-height: 90vh;
+            margin: 1.75rem auto;
+        }
+
+        .modal-content {
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-body {
+            overflow-y: auto;
+            max-height: calc(90vh - 120px);
+            padding: 1rem;
+        }
+
+        .modal-header {
+            flex-shrink: 0;
+        }
+
+        .modal-footer {
+            flex-shrink: 0;
+        }
     </style>
 
     <!-- Alert Messages -->
@@ -125,130 +154,155 @@
 
     <!-- Modal Form -->
     @if($showModal)
-    <div class="modal fade show" style="display: block; background-color: rgba(0,0,0,0.5);" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">{{ $editingPedagang ? 'Edit Pedagang' : 'Tambah Pedagang Baru' }}</h5>
-                    <button type="button" class="close" wire:click="closeModal">
-                        <span>&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <form wire:submit.prevent="save">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="nama">Nama Pedagang *</label>
-                                    <input type="text" class="form-control @error('nama') is-invalid @enderror" 
-                                           wire:model="nama" id="nama" placeholder="Masukkan nama pedagang">
-                                    @error('nama') <div class="invalid-feedback">{{ $message }}</div> @enderror
+        <div class="modal fade show" style="display: block; background-color: rgba(0,0,0,0.5);" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">{{ $editingPedagang ? 'Edit Pedagang' : 'Tambah Pedagang Baru' }}</h5>
+                        <button type="button" class="close" wire:click="closeModal">
+                            <span>&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form wire:submit.prevent="save">
+                            @if(session('role') === 'superadmin')
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <div class="form-group">
+                                            <label for="nama_pasar">Nama Pasar *</label>
+                                            <select class="form-control @error('nama_pasar') is-invalid @enderror"
+                                                wire:model="nama_pasar" id="nama_pasar">
+                                                <option value="">-- Pilih Nama Pasar --</option>
+                                                @foreach($pasar_list as $pasar)
+                                                    <option value="{{ $pasar->nama }}">{{ $pasar->nama }}</option>
+                                                @endforeach
+                                            </select>
+                                            @error('nama_pasar') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="nama">Nama Pedagang *</label>
+                                        <input type="text" class="form-control @error('nama') is-invalid @enderror"
+                                            wire:model="nama" id="nama" placeholder="Masukkan nama pedagang">
+                                        @error('nama') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="kode_kios">Kode Kios *</label>
+                                        <input type="text" class="form-control @error('kode_kios') is-invalid @enderror"
+                                            wire:model="kode_kios" id="kode_kios" placeholder="Masukkan kode kios">
+                                        @error('kode_kios') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                    </div>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="kode_kios">Kode Kios *</label>
-                                    <input type="text" class="form-control @error('kode_kios') is-invalid @enderror" 
-                                           wire:model="kode_kios" id="kode_kios" placeholder="Masukkan kode kios">
-                                    @error('kode_kios') <div class="invalid-feedback">{{ $message }}</div> @enderror
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="id_kios">ID Kios *</label>
+                                        <input type="text" class="form-control @error('id_kios') is-invalid @enderror"
+                                            wire:model="id_kios" id="id_kios" placeholder="Masukkan ID kios">
+                                        <small class="text-muted">Kosongkan jika tidak ingin mengganti id kios</small>
+                                        @error('id_kios') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="tarif">Tarif (Rp) *</label>
+                                        <input type="number" class="form-control @error('tarif') is-invalid @enderror"
+                                            wire:model="tarif" id="tarif" placeholder="Masukkan tarif" min="0">
+                                        @error('tarif') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="id_kios">ID Kios *</label>
-                                    <input type="text" class="form-control @error('id_kios') is-invalid @enderror" 
-                                           wire:model="id_kios" id="id_kios" placeholder="Masukkan ID kios">
-                                    @error('id_kios') <div class="invalid-feedback">{{ $message }}</div> @enderror
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="nomor_identitas">Nomor Identitas</label>
+                                        <input type="text"
+                                            class="form-control @error('nomor_identitas') is-invalid @enderror"
+                                            wire:model="nomor_identitas" id="nomor_identitas"
+                                            placeholder="Masukkan nomor identitas">
+                                        @error('nomor_identitas') <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="email">Email</label>
+                                        <input type="email" class="form-control @error('email') is-invalid @enderror"
+                                            wire:model="email" id="email" placeholder="Masukkan email">
+                                        @error('email') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                    </div>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="tarif">Tarif (Rp) *</label>
-                                    <input type="number" class="form-control @error('tarif') is-invalid @enderror" 
-                                           wire:model="tarif" id="tarif" placeholder="Masukkan tarif" min="0">
-                                    @error('tarif') <div class="invalid-feedback">{{ $message }}</div> @enderror
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="jenis_dagangan">Jenis Dagangan *</label>
+                                        <input type="text"
+                                            class="form-control @error('jenis_dagangan') is-invalid @enderror"
+                                            wire:model="jenis_dagangan" id="jenis_dagangan"
+                                            placeholder="Masukkan jenis dagangan">
+                                        @error('jenis_dagangan') <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="alamat">Alamat</label>
+                                        <textarea class="form-control @error('alamat') is-invalid @enderror"
+                                            wire:model="alamat" id="alamat" rows="3"
+                                            placeholder="Masukkan alamat"></textarea>
+                                        @error('alamat') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="nomor_identitas">Nomor Identitas</label>
-                                    <input type="text" class="form-control @error('nomor_identitas') is-invalid @enderror" 
-                                           wire:model="nomor_identitas" id="nomor_identitas" placeholder="Masukkan nomor identitas">
-                                    @error('nomor_identitas') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="email">Email</label>
-                                    <input type="email" class="form-control @error('email') is-invalid @enderror" 
-                                           wire:model="email" id="email" placeholder="Masukkan email">
-                                    @error('email') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="jenis_dagangan">Jenis Dagangan *</label>
-                                    <input type="text" class="form-control @error('jenis_dagangan') is-invalid @enderror" 
-                                           wire:model="jenis_dagangan" id="jenis_dagangan" placeholder="Masukkan jenis dagangan">
-                                    @error('jenis_dagangan') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="alamat">Alamat</label>
-                                    <textarea class="form-control @error('alamat') is-invalid @enderror" 
-                                              wire:model="alamat" id="alamat" rows="3" placeholder="Masukkan alamat"></textarea>
-                                    @error('alamat') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                                </div>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" wire:click="closeModal">Batal</button>
-                    <button type="button" class="btn btn-primary" wire:click="save">
-                        {{ $editingPedagang ? 'Update' : 'Simpan' }}
-                    </button>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" wire:click="closeModal">Batal</button>
+                        <button type="button" class="btn btn-primary" wire:click="save">
+                            {{ $editingPedagang ? 'Update' : 'Simpan' }}
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
     @endif
 
     <!-- Modal QR Code Preview -->
     @if($showQrModal)
-    <div class="modal fade show" style="display: block; background-color: rgba(0,0,0,0.5);" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">QR Code - {{ $qrPedagangNama }}</h5>
-                    <button type="button" class="close" wire:click="closeQrModal">
-                        <span>&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body text-center">
-                    <img src="{{ $qrCodeUrl }}" alt="QR Code" class="img-fluid" style="max-width: 300px;">
-                    <div class="mt-3">
-                        <a href="{{ $qrCodeUrl }}" download="qr_{{ $qrPedagangNama }}.png" class="btn btn-primary">
-                            <i class="icon-download"></i> Download QR Code
-                        </a>
+        <div class="modal fade show" style="display: block; background-color: rgba(0,0,0,0.5);" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">QR Code - {{ $qrPedagangNama }}</h5>
+                        <button type="button" class="close" wire:click="closeQrModal">
+                            <span>&times;</span>
+                        </button>
                     </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" wire:click="closeQrModal">Tutup</button>
+                    <div class="modal-body text-center">
+                        <img src="{{ $qrCodeUrl }}" alt="QR Code" class="img-fluid" style="max-width: 300px;">
+                        <div class="mt-3">
+                            <a href="{{ $qrCodeUrl }}" download="qr_{{ $qrPedagangNama }}.png" class="btn btn-primary">
+                                <i class="icon-download"></i> Download QR Code
+                            </a>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" wire:click="closeQrModal">Tutup</button>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
     @endif
 </div>
 
@@ -260,30 +314,30 @@
     });
 
     // Fungsi untuk edit pedagang
-    window.editPedagang = function(id) {
+    window.editPedagang = function (id) {
         @this.call('edit', id);
     };
 
     // Fungsi untuk delete pedagang dengan konfirmasi
-    window.deletePedagang = function(id) {
+    window.deletePedagang = function (id) {
         if (confirm('Apakah Anda yakin ingin menghapus pedagang ini?')) {
             @this.call('delete', id);
         }
     };
 
     // Fungsi untuk generate QR code
-    window.generateQr = function(id) {
+    window.generateQr = function (id) {
         @this.call('generateQr', id);
     };
 
     // Fungsi untuk view QR code
-    window.viewQr = function(id, qrCodeFile, nama) {
+    window.viewQr = function (id, qrCodeFile, nama) {
         @this.call('viewQr', id, qrCodeFile, nama);
     };
 
-    
+
     // Close modal when clicking outside
-    $(document).on('click', '.modal', function(e) {
+    $(document).on('click', '.modal', function (e) {
         if (e.target === this) {
             @this.call('closeModal');
         }
@@ -293,19 +347,21 @@
     function initializeDataTable() {
         // console.log('initializeDataTable');
         $('#pedagang').DataTable().destroy();
-        
+
         var data1 = @json($pedagang->toArray());
         var table = $('#pedagang').DataTable({
             "pageLength": 25,
             "data": data1,
             "columns": [
-                { "data": "nama", "render": function (data, type, row) {
-                    if (data == null || data == "" || data == ' ') {
-                        return "<span style='color: grey;'><i>(Nama Kosong)</i></span>"
-                    } else {
-                        return data;
+                {
+                    "data": "nama", "render": function (data, type, row) {
+                        if (data == null || data == "" || data == ' ') {
+                            return "<span style='color: grey;'><i>(Nama Kosong)</i></span>"
+                        } else {
+                            return data;
+                        }
                     }
-                } },
+                },
                 { "data": "kode_kios" },
                 { "data": "id_kios" },
                 {
@@ -331,13 +387,15 @@
                         }
                     }
                 },
-                { "data": "jenis_dagangan", "render": function (data, type, row) {
-                    if (data == null || data == "" || data == ' ') {
-                        return "<span style='color: grey;'><i>(Jenis Dagangan Kosong)</i></span>"
-                    } else {
-                        return data;
+                {
+                    "data": "jenis_dagangan", "render": function (data, type, row) {
+                        if (data == null || data == "" || data == ' ') {
+                            return "<span style='color: grey;'><i>(Jenis Dagangan Kosong)</i></span>"
+                        } else {
+                            return data;
+                        }
                     }
-                } },
+                },
                 {
                     "data": "email", "render": function (data, type, row) {
                         if (data == null || data == "" || data == ' ') {
@@ -354,7 +412,7 @@
                     "render": function (data, type, row) {
                         if (row.qr_code_file && row.qr_code_file != '' && row.qr_code_file != ' ' && row.qr_code_file != null) {
                             return '<button class="btn btn-sm btn-success me-1" onclick="viewQr(' + row.id + ', \'' + row.qr_code_file + '\', \'' + row.nama + '\')"><i class="icon-eye"></i></button>' +
-                                   '<button class="btn btn-sm btn-primary" onclick="generateQr(' + row.id + ')"><i class="icon-refresh"></i></button>';
+                                '<button class="btn btn-sm btn-primary" onclick="generateQr(' + row.id + ')"><i class="icon-refresh"></i></button>';
                         } else {
                             return '<button class="btn btn-sm btn-primary" onclick="generateQr(' + row.id + ')"><i class="icon-layers"></i></button>';
                         }
@@ -384,13 +442,13 @@
             }
         });
     }
-    
+
     $wire.on('dataTableRefresh', () => {
         console.log('dataTableRefresh');
         // $('#pedagang').DataTable().ajax.reload();
         initializeDataTable();
     });
-    
+
 
 </script>
 @endscript

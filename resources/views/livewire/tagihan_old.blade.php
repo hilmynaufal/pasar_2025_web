@@ -1,4 +1,4 @@
-<div wire:key="jjj" class="container-scroller">
+<div class="container-scroller">
     <!-- partial:partials/_navbar.html -->
     <livewire:nav-bar />
     <!-- partial -->
@@ -18,47 +18,23 @@
                             <div class="mb-0" style="margin-right:4px">
                                 <div class="grid-margin">
                                     <div class="row">
-                                        <div class="col-12 mb-4">
+                                        <div class="col-12 col-xl-8 mb-4 mb-xl-0">
                                             <h3 class="font-weight-bold">Tagihan</h3>
                                             <p class="card-description">
                                                 Semua tagihan di {{session('nama_pasar')}} pada Tanggal {{ $date }}
                                             </p>
                                         </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-12 col-md-6 col-lg-3 mb-3">
-                                            <p class="card-description">
-                                                Pilih Tanggal
-                                            </p>
-                                            <input class="form-control form-control-sm text-primary" wire:model="date"
-                                                name="date" wire:key="ahay" id="kt_datepicker_1" />
-                                        </div>
-                                        <div class="col-12 col-md-6 col-lg-3 mb-3">
-                                            <p class="card-description">
-                                                Filter Pasar
-                                            </p>
-                                            <select class="form-control form-control-sm" id="filter_pasar"
-                                                wire:model="filter_pasar">
-                                                @foreach($pasar_options as $pasar)
-                                                    <option value="{{ $pasar }}">{{ $pasar }}</option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                        <div class="col-12 col-md-6 col-lg-3 mb-3">
-                                            <p class="card-description">
-                                                Filter Petugas
-                                            </p>
-                                            <select class="form-control form-control-sm" id="filter_petugas"
-                                                wire:model="filter_petugas">
-                                                <option value="">Semua Petugas</option>
-                                                @if(!empty($petugas_options))
-                                                    @foreach($petugas_options as $petugas)
-                                                        <option value="{{ $petugas['salesman'] ?? '' }}">
-                                                            {{ $petugas['salesman'] ?? 'Unknown' }}
-                                                        </option>
-                                                    @endforeach
-                                                @endif
-                                            </select>
+                                        <div class="col-12 col-xl-4">
+                                            <div class="justify-content-end d-flex">
+                                                <div class="flex-md-grow-1 flex-xl-grow-0">
+                                                    <p class="card-description">
+                                                        Pilih Tanggal
+                                                    </p>
+                                                    <input class="form-control form-control-sm text-primary"
+                                                        wire:model="date" name="date" wire:key="ahay"
+                                                        id="kt_datepicker_1" />
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -85,7 +61,7 @@
                                                     <th>Tanggal</th>
                                                     <th>Kode Kios</th>
                                                     <th>Tipe</th>
-                                                    <th>Tarif</th>
+                                                    <th> Tarif</th>
                                                     <th>Id Transaksi</th>
                                                     <th>Salesman</th>
                                                     <th></th>
@@ -99,6 +75,8 @@
                     </div>
                 </div>
             </div>
+            <!-- content-wrapper ends -->
+            <!-- partial:partials/_footer.html -->
             <footer class="footer">
                 <div class="d-sm-flex justify-content-center justify-content-sm-between">
                     <span class="text-muted text-center text-sm-left d-block d-sm-inline-block">Copyright © 2021.
@@ -124,45 +102,6 @@
 @script
 <script>
     document.addEventListener('livewire:navigated', function () {
-
-        // Function to get current filter values
-        function getFilterData() {
-            return {
-                "tanggal": $("#kt_datepicker_1").val() || "{{$date}}",
-                "nama_pasar": $("#filter_pasar").val() || "",
-                "salesman": $("#filter_petugas").val() || "",
-            };
-        }
-
-        function updateFilterOptions() {
-            var filterData = { "nama_pasar": $('#filter_pasar').val() };
-
-            $.ajax({
-                "url": "{{ env('APP_URL') }}/filter_options_tagihan",
-                "method": "POST",
-                "timeout": 0,
-                "data": filterData
-            }).done(function (response) {
-                console.log(response);
-                if (response.status === 1) {
-                    var petugasOptions = '<option value="">Semua Petugas</option>';
-                    if (response.data.petugas && response.data.petugas.length > 0) {
-                        $.each(response.data.petugas, function (index, item) {
-                            petugasOptions += '<option value="' + item.id_petugas + '">' + item.nama_petugas + '</option>';
-                        });
-                    }
-                    $('#filter_petugas').html(petugasOptions);
-
-                    var distrikOptions = '<option value="">Semua Distrik</option>';
-                    if (response.data.distrik && response.data.distrik.length > 0) {
-                        $.each(response.data.distrik, function (index, item) {
-                            distrikOptions += '<option value="' + item + '">' + item + '</option>';
-                        });
-                    }
-                    $('#filter_distrik').html(distrikOptions);
-                }
-            });
-        }
 
         var settings = {
             "url": "{{ env('APP_URL') }}/tagihan_stat",
@@ -287,71 +226,44 @@
             });
         });
 
-        // Date picker with onChange handler
         var a = $("#kt_datepicker_1").flatpickr({
             "setDate": new Date(),
             "autoclose": true,
             "onChange": function (selectedDates, dateStr, instance) {
                 console.log(dateStr);
-                updateTable();
-                updateStats();
+                var settings = {
+                    "url": "{{ env('APP_URL') }}/tagihan",
+                    "method": "POST",
+                    "timeout": 0,
+                    "data": {
+                        "tanggal": dateStr,
+                        "nama_pasar": '{{ session('nama_pasar') }}'
+                    }
+                };
+
+                $.ajax(settings).done(function (response) {
+                    $('#tagihan').DataTable().clear().rows.add(response['data']).draw();
+                })
+
+                var settings = {
+                    "url": "{{ env('APP_URL') }}/tagihan_stat",
+                    "method": "POST",
+                    "timeout": 0,
+                    "data": {
+                        "tanggal": dateStr,
+                        "nama_pasar": '{{ session('nama_pasar') }}'
+                    }
+                };
+
+                $.ajax(settings).done(function (response) {
+                    console.log(response);
+                    $('#total_sudah_dibayar').text(response['data']['totalSudahDibayar']);
+                    $('#total_belum_dibayar').text(response['data']['totalBelumDibayar']);
+                })
+
             }
-        });
-
-        // Function to update table with filters
-        function updateTable() {
-            var filterData = getFilterData();
-
-            $.ajax({
-                "url": "{{ env('APP_URL') }}/tagihan_backup",
-                "method": "POST",
-                "timeout": 0,
-                "data": filterData
-            }).done(function (response) {
-                console.log(response);
-                $('#tagihan').DataTable().clear().rows.add(response['data']).draw();
-            });
-        }
-
-        // Function to update statistics with filters
-        function updateStats() {
-            var filterData = getFilterData();
-
-            function number_format(number) {
-                return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-            }
-
-            $.ajax({
-                "url": "{{ env('APP_URL') }}/tagihan_stat",
-                "method": "POST",
-                "timeout": 0,
-                "data": filterData
-            }).done(function (response) {
-                console.log(response);
-                $('#total_sudah_dibayar').text(response['data']['totalSudahDibayar']);
-                $('#total_belum_dibayar').text(response['data']['totalBelumDibayar']);
-            });
-        }
-
-        // Filter Pasar onChange handler
-        $(document).on('change', '#filter_pasar', function () {
-            console.log('Filter Pasar changed:', $(this).val());
-            // Reset dependent filters
-            $('#filter_petugas').val('');
-            $('#filter_distrik').val('');
-            updateTable();
-            updateStats();
-            updateFilterOptions();
-        });
-
-        // Filter Petugas onChange handler
-        $(document).on('change', '#filter_petugas', function () {
-            console.log('Filter Petugas changed:', $(this).val());
-            updateTable();
-            updateStats();
         });
     });
-
 
 </script>
 @endscript
