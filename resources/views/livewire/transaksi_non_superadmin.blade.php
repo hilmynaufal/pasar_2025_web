@@ -21,17 +21,29 @@
                                         <div class="col-12 mb-4">
                                             <h3 class="font-weight-bold">Transaksi</h3>
                                             <p class="card-description">
-                                                Semua transaksi di {{session('nama_pasar')}} pada Tanggal {{ $date }}
+                                                Semua transaksi di {{session('nama_pasar')}}
                                             </p>
                                         </div>
                                     </div>
+                                    <div class="row mb-2">
+                                        <div class="col-12">
+                                            <p class="card-description mb-1">Pilih Rentang Tanggal</p>
+                                            <div class="d-flex flex-wrap align-items-center" style="gap:6px">
+                                                <button type="button" class="btn btn-outline-secondary btn-sm btn-range-quick" data-range="today">Hari Ini</button>
+                                                <button type="button" class="btn btn-outline-secondary btn-sm btn-range-quick" data-range="week">1 Minggu</button>
+                                                <button type="button" class="btn btn-outline-secondary btn-sm btn-range-quick" data-range="month">1 Bulan</button>
+                                                <button type="button" class="btn btn-outline-secondary btn-sm btn-range-quick" data-range="3month">3 Bulan</button>
+                                            </div>
+                                        </div>
+                                    </div>
                                     <div class="row">
-                                        <div class="col-12 col-md-6 col-lg-3 mb-3">
-                                            <p class="card-description">
-                                                Pilih Tanggal
-                                            </p>
-                                            <input class="form-control form-control-sm text-primary" wire:model="date"
-                                                name="date" wire:key="ahay" id="kt_datepicker_1" />
+                                        <div class="col-12 col-md-6 col-lg-2 mb-3">
+                                            <p class="card-description">Tanggal Awal</p>
+                                            <input class="form-control form-control-sm text-primary" id="tanggal_awal" name="tanggal_awal" placeholder="Tanggal Awal" readonly />
+                                        </div>
+                                        <div class="col-12 col-md-6 col-lg-2 mb-3">
+                                            <p class="card-description">Tanggal Akhir</p>
+                                            <input class="form-control form-control-sm text-primary" id="tanggal_akhir" name="tanggal_akhir" placeholder="Tanggal Akhir" readonly />
                                         </div>
                                         <div class="col-12 col-md-6 col-lg-3 mb-3">
                                             <p class="card-description">
@@ -77,11 +89,11 @@
                             </div>
                             <div class="d-flex flex-wrap mb-5">
                                 <div class="mr-5 mt-3">
-                                    <p class="text-muted">Total Transaksi Hari ini</p>
+                                    <p class="text-muted">Total Transaksi</p>
                                     <h3 id="total_transaksi" class="text-primary fs-30 font-weight-medium">0</h3>
                                 </div>
                                 <div class="mr-5 mt-3">
-                                    <p class="text-muted">Total Nominal hari ini</p>
+                                    <p class="text-muted">Total Nominal</p>
                                     <h3 id="total_nominal" class="text-primary fs-30 font-weight-medium">Rp. 0</h3>
                                 </div>
                             </div>
@@ -138,7 +150,8 @@
         // Function to get current filter values
         function getFilterData() {
             return {
-                "tanggal": $("#kt_datepicker_1").val() || "{{$date}}",
+                "tanggal_awal": $("#tanggal_awal").val() || "{{$date}}",
+                "tanggal_akhir": $("#tanggal_akhir").val() || "{{$date}}",
                 "nama_pasar": $("#filter_pasar").val() || "",
                 "id_petugas": $("#filter_petugas").val() || "",
                 "nama_distrik": $("#filter_distrik").val() || ""
@@ -323,13 +336,20 @@
                 .appendTo($('sheets', workbook));
         }
 
+        var today = "{{ $date }}";
+
+        // Set default date range to today
+        $("#tanggal_awal").val(today);
+        $("#tanggal_akhir").val(today);
+
         // Initial load - statistics
         var settings = {
             "url": "{{ env('APP_URL') }}/dashboard",
             "method": "POST",
             "timeout": 0,
             "data": {
-                "tanggal": "{{$date}}",
+                "tanggal_awal": today,
+                "tanggal_akhir": today,
                 "nama_pasar": '{{ session('nama_pasar') }}'
             }
         };
@@ -351,7 +371,8 @@
             "method": "POST",
             "timeout": 0,
             "data": {
-                "tanggal": "{{ $date }}",
+                "tanggal_awal": today,
+                "tanggal_akhir": today,
                 "nama_pasar": '{{ session('nama_pasar') }}'
             }
         };
@@ -405,8 +426,11 @@
                                         },
                                         customize: function (xlsx) {
                                             // Get current statistics
+                                            var tglAwal = $("#tanggal_awal").val() || "{{$date}}";
+                                            var tglAkhir = $("#tanggal_akhir").val() || "{{$date}}";
+                                            var rangeLabel = tglAwal === tglAkhir ? tglAwal : tglAwal + ' s/d ' + tglAkhir;
                                             var stats = {
-                                                tanggal: $("#kt_datepicker_1").val() || "{{$date}}",
+                                                tanggal: rangeLabel,
                                                 pasar: $("#filter_pasar option:selected").text() || $("#filter_pasar").val() || 'Semua Pasar',
                                                 petugas: $("#filter_petugas option:selected").text() || 'Semua Petugas',
                                                 distrik: $("#filter_distrik").val() || 'Semua Distrik',
@@ -453,15 +477,56 @@
             });
         });
 
-        // Date picker with onChange handler
-        var a = $("#kt_datepicker_1").flatpickr({
-            "setDate": new Date(),
-            "autoclose": true,
-            "onChange": function (selectedDates, dateStr, instance) {
-                console.log(dateStr);
-                updateTable();
-                updateStats();
+        // Date pickers
+        function formatDate(d) {
+            var mm = String(d.getMonth() + 1).padStart(2, '0');
+            var dd = String(d.getDate()).padStart(2, '0');
+            return d.getFullYear() + '-' + mm + '-' + dd;
+        }
+
+        $("#tanggal_awal").flatpickr({
+            defaultDate: today,
+            dateFormat: "Y-m-d",
+            onChange: function(selectedDates, dateStr) {
+                if (dateStr) { updateTable(); updateStats(); }
             }
+        });
+
+        $("#tanggal_akhir").flatpickr({
+            defaultDate: today,
+            dateFormat: "Y-m-d",
+            onChange: function(selectedDates, dateStr) {
+                if (dateStr) { updateTable(); updateStats(); }
+            }
+        });
+
+        // Quick range buttons
+        $(document).on('click', '.btn-range-quick', function () {
+            var range = $(this).data('range');
+            var end = new Date();
+            var start = new Date();
+
+            if (range === 'today') {
+                // start = end (already same)
+            } else if (range === 'week') {
+                start.setDate(end.getDate() - 6);
+            } else if (range === 'month') {
+                start.setDate(end.getDate() - 29);
+            } else if (range === '3month') {
+                start.setMonth(end.getMonth() - 3);
+                start.setDate(start.getDate() + 1);
+            }
+
+            var startStr = formatDate(start);
+            var endStr = formatDate(end);
+
+            $("#tanggal_awal").val(startStr);
+            $("#tanggal_akhir").val(endStr);
+            $("#tanggal_awal")[0]._flatpickr.setDate(startStr);
+            $("#tanggal_akhir")[0]._flatpickr.setDate(endStr);
+
+            updateTable();
+            updateStats();
         });
 
         // Filter Pasar onChange handler
