@@ -421,14 +421,22 @@ class ApiController extends Controller
     {
 
         $tanggal = $request->tanggal;
+        $tanggal_awal = $request->tanggal_awal;
+        $tanggal_akhir = $request->tanggal_akhir;
         $id = $request->id_petugas;
         $nama_pasar = $request->nama_pasar;
         $nama_distrik = $request->nama_distrik;
 
         $query = DB::table('transaksi')
             ->select('transaksi.*', 'tagihan.tarif')
-            ->leftJoin('tagihan', 'transaksi.id', '=', 'tagihan.transaction_id')
-            ->where(DB::raw('DATE(tanggal_transaksi)'), $tanggal);
+            ->leftJoin('tagihan', 'transaksi.id', '=', 'tagihan.transaction_id');
+
+        if (!empty($tanggal_awal) && !empty($tanggal_akhir)) {
+            $query->whereDate('tanggal_transaksi', '>=', $tanggal_awal)
+                  ->whereDate('tanggal_transaksi', '<=', $tanggal_akhir);
+        } elseif (!empty($tanggal)) {
+            $query->where(DB::raw('DATE(tanggal_transaksi)'), $tanggal);
+        }
 
         if (!empty($id)) {
             $query->where('transaksi.id_petugas', $id);
@@ -530,25 +538,37 @@ class ApiController extends Controller
 
         $id = $request->input("id_petugas") ?? $request->input("id");
         $tanggal = $request->input('tanggal');
+        $tanggal_awal = $request->input('tanggal_awal');
+        $tanggal_akhir = $request->input('tanggal_akhir');
         $nama_pasar = $request->input('nama_pasar');
         $nama_distrik = $request->input('nama_distrik');
 
+        $applyDateFilter = function ($query) use ($tanggal, $tanggal_awal, $tanggal_akhir) {
+            if (!empty($tanggal_awal) && !empty($tanggal_akhir)) {
+                $query->whereDate('tanggal_transaksi', '>=', $tanggal_awal)
+                      ->whereDate('tanggal_transaksi', '<=', $tanggal_akhir);
+            } elseif (!empty($tanggal)) {
+                $query->where(DB::raw('DATE(tanggal_transaksi)'), $tanggal);
+            }
+            return $query;
+        };
+
         // Query untuk total nominal semua metode pembayaran
         $queryTotal = DB::table('transaksi')
-            ->select(DB::raw('SUM(nominal_transaksi) as total_nominal'))
-            ->where(DB::raw('DATE(tanggal_transaksi)'), $tanggal);
+            ->select(DB::raw('SUM(nominal_transaksi) as total_nominal'));
+        $applyDateFilter($queryTotal);
 
         // Query untuk total nominal Tunai
         $queryTunai = DB::table('transaksi')
             ->select(DB::raw('SUM(nominal_transaksi) as total_nominal_tunai'))
-            ->where(DB::raw('DATE(tanggal_transaksi)'), $tanggal)
             ->where('metode_pembayaran', 'Tunai');
+        $applyDateFilter($queryTunai);
 
         // Query untuk total nominal QRIS
         $queryQris = DB::table('transaksi')
             ->select(DB::raw('SUM(nominal_transaksi) as total_nominal_qris'))
-            ->where(DB::raw('DATE(tanggal_transaksi)'), $tanggal)
             ->where('metode_pembayaran', 'QRIS');
+        $applyDateFilter($queryQris);
 
         if (!empty($id)) {
             $queryTotal->where('id_petugas', $id);
@@ -592,8 +612,8 @@ class ApiController extends Controller
             $totalNominalQris = $resultQris[0]->total_nominal_qris;
         }
 
-        $queryJumlahTransaksi = DB::table('transaksi')
-            ->where(DB::raw('DATE(tanggal_transaksi)'), $tanggal);
+        $queryJumlahTransaksi = DB::table('transaksi');
+        $applyDateFilter($queryJumlahTransaksi);
 
         if (!empty($id)) {
             $queryJumlahTransaksi->where('id_petugas', $id);
